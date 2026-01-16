@@ -34,9 +34,6 @@
       background-color: #8a5ccf;
       color: white;
     }
-    .controls button:active {
-      background-color: #6a3fa0;
-    }
   </style>
 </head>
 <body>
@@ -59,85 +56,27 @@
 
   let pony = { x: 300, y: 200 };
   let keys = { up:false, down:false, left:false, right:false };
-  let facing = "right";
 
-const BODY = "#7d4bb3";
-const BODY_DARK = "#5a2f8a";
-const MANE = "#cfc3e8";
-const MANE_DARK = "#a79acb";
-const EYE = "#2ecc71";
-const OUTLINE = "#3a1f5c";
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-const BODY = "#7d4bb3";
-const BODY_DARK = "#5a2f8a";
-const MANE = "#cfc3e8";
-const MANE_DARK = "#a79acb";
-const EYE = "#2ecc71";
+    // DEBUG visible
+    ctx.fillStyle = "#8a5ccf";
+    ctx.fillRect(pony.x, pony.y, 50, 50);
 
-const sprite = [
-  // melena / cabeza
-  ["", "", "", "", MANE, MANE, MANE, MANE, "", "", "", ""],
-  ["", "", "", MANE_DARK, MANE, MANE, MANE, MANE, MANE, "", "", ""],
-  ["", "", BODY_DARK, BODY, BODY, BODY, BODY, BODY, MANE, "", "", ""],
-  ["", BODY_DARK, BODY, BODY, BODY, BODY, BODY, BODY, BODY, "", "", ""],
-
-  // cuello + pecho
-  ["", BODY_DARK, BODY, BODY, BODY, BODY, BODY, BODY, BODY, "", "", ""],
-  ["", BODY_DARK, BODY, BODY, BODY, BODY, BODY, BODY, BODY, "", "", ""],
-
-  // torso largo
-  ["", "", BODY_DARK, BODY, BODY, BODY, BODY, BODY, BODY, BODY, "", ""],
-  ["", "", BODY_DARK, BODY, BODY, BODY, BODY, BODY, BODY, BODY, "", ""],
-  ["", "", BODY_DARK, BODY, BODY, BODY, BODY, BODY, BODY, BODY, "", ""],
-
-  // patas delanteras
-  ["", "", BODY_DARK, BODY, "", BODY, "", BODY, "", "", "", ""],
-  ["", "", BODY_DARK, BODY, "", BODY, "", BODY, "", "", "", ""],
-
-  // vientre
-  ["", "", "", BODY_DARK, BODY, BODY, BODY, BODY, "", "", "", ""],
-
-  // patas traseras
-  ["", "", "", BODY_DARK, BODY, "", BODY, "", "", "", "", ""],
-  ["", "", "", BODY_DARK, BODY, "", BODY, "", "", "", "", ""],
-
-  // cola
-  ["", "", "", "", BODY_DARK, BODY_DARK, "", "", "", "", "", ""],
-  ["", "", "", "", BODY_DARK, BODY_DARK, "", "", "", "", "", ""],
-  ["", "", "", "", "", BODY_DARK, BODY_DARK, "", "", "", "", ""],
-  ["", "", "", "", "", BODY_DARK, BODY_DARK, "", "", "", "", ""],
-
-  // ojo (posición correcta en la cabeza)
-  ["", "", "", "", "", "", EYE, "", "", "", "", ""]
-];
-
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // DEBUG: algo morado SI O SI
-  ctx.fillStyle = "purple";
-  ctx.fillRect(pony.x, pony.y, 40, 40);
-
-  ctx.fillStyle = "white";
-  ctx.font = "16px Arial";
-  ctx.fillText("PONY", pony.x, pony.y - 5);
-   }
+    ctx.fillStyle = "white";
+    ctx.font = "16px Arial";
+    ctx.fillText("PONY OK", pony.x, pony.y - 6);
+  }
 
   function update() {
     if (keys.up) pony.y -= 2;
     if (keys.down) pony.y += 2;
+    if (keys.left) pony.x -= 2;
+    if (keys.right) pony.x += 2;
 
-    if (keys.left) {
-      pony.x -= 2;
-      facing = "left";
-    }
-    if (keys.right) {
-      pony.x += 2;
-      facing = "right";
-    }
-
-pony.x = Math.max(0, Math.min(canvas.width - 200, pony.x));
-pony.y = Math.max(0, Math.min(canvas.height - 200, pony.y));
+    pony.x = Math.max(0, Math.min(canvas.width - 50, pony.x));
+    pony.y = Math.max(0, Math.min(canvas.height - 50, pony.y));
 
     draw();
     requestAnimationFrame(update);
