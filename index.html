@@ -62,33 +62,34 @@ let facing = "right";
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const px = 6; // tamaño del pixel
+  const px = 5; // tamaño del pixel
   const baseX = pony.x;
   const baseY = pony.y;
 
-  const COLORS = {
-    B: "#8b0030", // cuerpo
-    D: "#640020", // sombra cuerpo
-    M: "#b8b0ad", // melena clara
-    m: "#8f8885", // melena sombra
-    E: "#2ecc71", // ojo
+  const C = {
+    R: "#8b0030", // cuerpo rojo
+    r: "#640020", // sombra cuerpo
+    H: "#b8b0ad", // melena clara
+    h: "#8f8885", // melena sombra
+    G: "#2ecc71", // ojo verde
     ".": null
   };
 
-  // Sprite basado directamente en la imagen
+  // Sprite MUCHO más parecido a la imagen
   const sprite = [
-    "....MMM...",
-    "...MMMM...",
-    "..BBBBB...",
-    ".BBBBBB...",
-    ".BBBBBB...",
-    "..BBBBBB..",
-    "..BBBBBB..",
-    "..BBBBBB..",
-    "...D.BD...",
-    "...D.BD...",
-    ".mm.......",
-    ".mm......."
+    "....HHHHH......",
+    "...HHHHHHH.....",
+    "..HHHHHHHH.....",
+    "..RRRRRRRR.....",
+    ".RRRRRRRRR.....",
+    ".RRRRRRRRR.....",
+    "..RRRRRRRRR....",
+    "..RRRRRRRRR....",
+    "..RRRRRRRRR....",
+    "...r.R...r.....",
+    "...r.R...r.....",
+    ".hh............",
+    ".hh............"
   ];
 
   ctx.save();
@@ -103,7 +104,7 @@ function draw() {
 
   for (let y = 0; y < sprite.length; y++) {
     for (let x = 0; x < sprite[y].length; x++) {
-      const color = COLORS[sprite[y][x]];
+      const color = C[sprite[y][x]];
       if (!color) continue;
 
       ctx.fillStyle = color;
@@ -111,9 +112,12 @@ function draw() {
     }
   }
 
+  // 👁️ ojo (posición exacta)
+  ctx.fillStyle = C.G;
+  ctx.fillRect(9 * px, baseY + 4 * px, px, px);
+
   ctx.restore();
   }
-
 // ===== UPDATE =====
 function update() {
   if (keys.up) pony.y -= 2;
