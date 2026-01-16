@@ -54,9 +54,10 @@
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
 
-  let pony = { x: 300, y: 200 };
-  let keys = { up:false, down:false, left:false, right:false };
-
+let pony = { x: 300, y: 200 };
+let keys = { up:false, down:false, left:false, right:false };
+let facing = "right";
+  
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -105,19 +106,26 @@ function draw() {
   ctx.restore();
 }
 
-  function update() {
-    if (keys.up) pony.y -= 2;
-    if (keys.down) pony.y += 2;
-    if (keys.left) pony.x -= 2;
-    if (keys.right) pony.x += 2;
+function update() {
+  if (keys.up) pony.y -= 2;
+  if (keys.down) pony.y += 2;
 
-    pony.x = Math.max(0, Math.min(canvas.width - 50, pony.x));
-    pony.y = Math.max(0, Math.min(canvas.height - 50, pony.y));
-
-    draw();
-    requestAnimationFrame(update);
+  if (keys.left) {
+    pony.x -= 2;
+    facing = "left";
   }
 
+  if (keys.right) {
+    pony.x += 2;
+    facing = "right";
+  }
+
+  pony.x = Math.max(0, Math.min(canvas.width - 50, pony.x));
+  pony.y = Math.max(0, Math.min(canvas.height - 50, pony.y));
+
+  draw();
+  requestAnimationFrame(update);
+}
   function press(dir) { keys[dir] = true; }
   function release(dir) { keys[dir] = false; }
 
