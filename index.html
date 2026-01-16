@@ -62,56 +62,57 @@ let facing = "right";
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const px = 6;
+  const px = 6; // tamaño del pixel
+  const baseX = pony.x;
   const baseY = pony.y;
+
+  const COLORS = {
+    B: "#8b0030", // cuerpo
+    D: "#640020", // sombra cuerpo
+    M: "#b8b0ad", // melena clara
+    m: "#8f8885", // melena sombra
+    E: "#2ecc71", // ojo
+    ".": null
+  };
+
+  // Sprite basado directamente en la imagen
+  const sprite = [
+    "....MMM...",
+    "...MMMM...",
+    "..BBBBB...",
+    ".BBBBBB...",
+    ".BBBBBB...",
+    "..BBBBBB..",
+    "..BBBBBB..",
+    "..BBBBBB..",
+    "...D.BD...",
+    "...D.BD...",
+    ".mm.......",
+    ".mm......."
+  ];
 
   ctx.save();
 
+  // giro izquierda / derecha
   if (facing === "left") {
-    ctx.translate(pony.x + 22 * px, 0);
+    ctx.translate(baseX + sprite[0].length * px, 0);
     ctx.scale(-1, 1);
   } else {
-    ctx.translate(pony.x, 0);
+    ctx.translate(baseX, 0);
   }
 
-  function p(x, y, c) {
-    ctx.fillStyle = c;
-    ctx.fillRect(x * px, baseY + y * px, px, px);
+  for (let y = 0; y < sprite.length; y++) {
+    for (let x = 0; x < sprite[y].length; x++) {
+      const color = COLORS[sprite[y][x]];
+      if (!color) continue;
+
+      ctx.fillStyle = color;
+      ctx.fillRect(x * px, baseY + y * px, px, px);
+    }
   }
-
-  const BODY = "#8b0030";
-  const BODY_D = "#640020";
-  const MANE = "#b8b0ad";
-  const MANE_D = "#8f8885";
-  const EYE = "#2ecc71";
-
-  // cabeza
-  p(8,0, MANE); p(9,0, MANE); p(10,0, MANE);
-  p(7,1, MANE); p(8,1, MANE); p(9,1, MANE); p(10,1, MANE);
-  p(7,2, BODY); p(8,2, BODY); p(9,2, BODY); p(10,2, BODY);
-  p(7,3, BODY); p(8,3, BODY); p(9,3, BODY); p(10,3, BODY);
-  p(9,3, EYE);
-
-  // cuello
-  p(8,4, BODY); p(9,4, BODY);
-  p(8,5, BODY); p(9,5, BODY);
-
-  // cuerpo
-  p(5,6, BODY_D); p(6,6, BODY); p(7,6, BODY); p(8,6, BODY); p(9,6, BODY);
-  p(5,7, BODY_D); p(6,7, BODY); p(7,7, BODY); p(8,7, BODY); p(9,7, BODY);
-  p(5,8, BODY_D); p(6,8, BODY); p(7,8, BODY); p(8,8, BODY); p(9,8, BODY);
-
-  // patas
-  p(6,9, BODY_D); p(8,9, BODY_D);
-  p(6,10, BODY_D); p(8,10, BODY_D);
-
-  // cola
-  p(4,7, MANE_D);
-  p(3,8, MANE_D);
-  p(3,9, MANE);
 
   ctx.restore();
-}
+  }
 
 // ===== UPDATE =====
 function update() {
