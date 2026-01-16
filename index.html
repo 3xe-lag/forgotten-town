@@ -33,10 +33,12 @@
 
 <canvas id="game" width="800" height="600"></canvas>
 
-<div>
-  <button ontouchstart="press('up')" ontouchend="release('up')">⬆️</button><br>
-  <button ontouchstart="press('left')" ontouchend="release('left')">⬅️</button>
-  <button ontouchstart="press('right')" ontouchend="release('right')">➡️</button><br>
+<div class="controls">
+  <button ontouchstart="press('up')" ontouchend="release('up')">⬆️</button>
+  <div>
+    <button ontouchstart="press('left')" ontouchend="release('left')">⬅️</button>
+    <button ontouchstart="press('right')" ontouchend="release('right')">➡️</button>
+  </div>
   <button ontouchstart="press('down')" ontouchend="release('down')">⬇️</button>
 </div>
 
