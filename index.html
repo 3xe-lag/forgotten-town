@@ -61,21 +61,45 @@
   let keys = { up:false, down:false, left:false, right:false };
   let facing = "right";
 
-  // SPRITE EXACTO (pixel art convertido a matriz)
-  const sprite = [
-    ["", "", "", "", "", "", "", "#bfb7b5", "#bfb7b5", "", ""],
-    ["", "", "", "", "", "#bfb7b5", "#bfb7b5", "#9f9896", "#9f9896", "", ""],
-    ["", "", "", "", "#bfb7b5", "#bfb7b5", "#9f9896", "#8c8583", "#8c8583", "", ""],
-    ["", "", "", "#7b001f", "#7b001f", "#bfb7b5", "#9f9896", "#8c8583", "", "", ""],
-    ["", "", "#7b001f", "#a8002d", "#7b001f", "#7b001f", "", "", "", "", ""],
-    ["", "", "#7b001f", "#a8002d", "#a8002d", "#7b001f", "", "", "", "", ""],
-    ["", "", "#7b001f", "#7b001f", "#7b001f", "", "", "", "", "", ""],
-    ["", "#7b001f", "#7b001f", "#7b001f", "#7b001f", "", "", "", "", "", ""],
-    ["", "#7b001f", "#a8002d", "#a8002d", "#7b001f", "", "", "", "", "", ""],
-    ["", "#7b001f", "#7b001f", "#7b001f", "#7b001f", "", "", "", "", "", ""],
-    ["", "", "#7b001f", "", "#7b001f", "", "", "", "", "", ""],
-    ["", "", "#7b001f", "", "#7b001f", "", "", "", "", "", ""]
-  ];
+const BODY = "#7d4bb3";
+const BODY_DARK = "#5a2f8a";
+const MANE = "#cfc3e8";
+const MANE_DARK = "#a79acb";
+const EYE = "#2ecc71";
+const OUTLINE = "#3a1f5c";
+
+const sprite = [
+  ["", "", "", "", "", MANE, MANE, MANE, "", "", ""],
+  ["", "", "", "", MANE_DARK, MANE, MANE, MANE, MANE, "", ""],
+  ["", "", "", BODY_DARK, BODY, BODY, BODY, BODY, MANE, "", ""],
+  ["", "", BODY_DARK, BODY, BODY, BODY, BODY, BODY, BODY, "", ""],
+  ["", BODY_DARK, BODY, BODY, BODY, BODY, BODY, BODY, BODY, "", ""],
+  ["", BODY_DARK, BODY, BODY, BODY, BODY, BODY, BODY, BODY, "", ""],
+
+  ["", "", BODY_DARK, BODY, BODY, BODY, BODY, BODY, "", "", ""],
+  ["", "", "", BODY, BODY, BODY, BODY, "", "", "", ""],
+
+  ["", "", BODY_DARK, BODY, "", BODY, "", BODY, "", "", ""],
+  ["", "", BODY_DARK, BODY, "", BODY, "", BODY, "", "", ""],
+
+  ["", "", "", BODY_DARK, "", BODY_DARK, "", "", "", "", ""],
+  ["", "", "", BODY_DARK, "", BODY_DARK, "", "", "", "", ""],
+
+  ["", "", "", "", BODY_DARK, BODY_DARK, "", "", "", "", ""],
+  ["", "", "", "", BODY_DARK, BODY_DARK, "", "", "", "", ""],
+
+  ["", "", "", "", "", BODY_DARK, BODY_DARK, "", "", "", ""],
+  ["", "", "", "", "", BODY_DARK, BODY_DARK, "", "", "", ""],
+
+  ["", "", "", "", "", "", BODY_DARK, BODY_DARK, "", "", ""],
+  ["", "", "", "", "", "", BODY_DARK, BODY_DARK, "", "", ""],
+
+  ["", "", "", "", "", "", "", BODY_DARK, BODY_DARK, "", ""],
+  ["", "", "", "", "", "", "", BODY_DARK, BODY_DARK, "", ""],
+
+  // ojo
+  ["", "", "", "", "", "", EYE, "", "", "", ""]
+];
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
