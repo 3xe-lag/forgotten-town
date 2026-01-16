@@ -111,30 +111,17 @@ const sprite = [
   ["", "", "", "", "", "", EYE, "", "", "", "", ""]
 ];
 
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const px = 5; // tamaño del pixel
-    const baseX = pony.x;
-    const baseY = pony.y;
+  // DEBUG: algo morado SI O SI
+  ctx.fillStyle = "purple";
+  ctx.fillRect(pony.x, pony.y, 40, 40);
 
-    for (let y = 0; y < sprite.length; y++) {
-      for (let x = 0; x < sprite[y].length; x++) {
-        const color = sprite[y][x];
-        if (!color) continue;
-
-        let drawX;
-        if (facing === "left") {
-          drawX = baseX + (sprite[y].length - 1 - x) * px;
-        } else {
-          drawX = baseX + x * px;
-        }
-
-        ctx.fillStyle = color;
-        ctx.fillRect(drawX, baseY + y * px, px, px);
-      }
-    }
-  }
+  ctx.fillStyle = "white";
+  ctx.font = "16px Arial";
+  ctx.fillText("PONY", pony.x, pony.y - 5);
+   }
 
   function update() {
     if (keys.up) pony.y -= 2;
