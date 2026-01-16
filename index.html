@@ -57,70 +57,85 @@
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
 
-  let pony = { x: 130, y: 130, size: 40 };
+  let pony = { x: 130, y: 130 };
   let keys = { up:false, down:false, left:false, right:false };
+  let facing = "right"; // dirección del pony
 
   function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const p = pony;
-  const px = 8; // tamaño de cada pixel aumentado
+    ctx.save();
+    if (facing === "left") {
+      ctx.translate(pony.x * 2 + 64, 0);
+      ctx.scale(-1, 1);
+    }
 
-  function pixel(x, y, color) {
-    ctx.fillStyle = color;
-    ctx.fillRect(p.x + x * px, p.y + y * px, px, px);
-  }
+    const px = 8;
 
-  const body = "#c58cff";
-  const mane = "#8a5ccf";
-  const eye = "#000000";
-  const leg = "#6a3fa0";
+    function pixel(x, y, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(pony.x + x * px, pony.y + y * px, px, px);
+    }
 
-  // cabeza
-  pixel(5,1, body);
-  pixel(6,1, body);
-  pixel(4,2, body);
-  pixel(5,2, body);
-  pixel(6,2, body);
-  pixel(7,2, body);
-  pixel(5,3, body);
-  pixel(6,3, body);
+    const body = "#c58cff";
+    const mane = "#8a5ccf";
+    const eye = "#000000";
+    const leg = "#6a3fa0";
 
-  // ojo
-  pixel(6,2, eye);
+    // cabeza
+    pixel(5,1, body);
+    pixel(6,1, body);
+    pixel(4,2, body);
+    pixel(5,2, body);
+    pixel(6,2, body);
+    pixel(7,2, body);
+    pixel(5,3, body);
+    pixel(6,3, body);
 
-  // cuerpo
-  pixel(1,3, body);
-  pixel(2,3, body);
-  pixel(3,3, body);
-  pixel(4,3, body);
-  pixel(1,4, body);
-  pixel(2,4, body);
-  pixel(3,4, body);
-  pixel(4,4, body);
+    // ojo
+    pixel(6,2, eye);
 
-  // melena
-  pixel(4,1, mane);
-  pixel(4,0, mane);
-  pixel(5,0, mane);
+    // cuerpo
+    pixel(1,3, body);
+    pixel(2,3, body);
+    pixel(3,3, body);
+    pixel(4,3, body);
+    pixel(1,4, body);
+    pixel(2,4, body);
+    pixel(3,4, body);
+    pixel(4,4, body);
 
-  // patas
-  pixel(1,5, leg);
-  pixel(3,5, leg);
+    // melena
+    pixel(4,1, mane);
+    pixel(4,0, mane);
+    pixel(5,0, mane);
 
-  // cola
-  pixel(0,3, mane);
-  pixel(0,4, mane);
+    // patas
+    pixel(1,5, leg);
+    pixel(3,5, leg);
+
+    // cola
+    pixel(0,3, mane);
+    pixel(0,4, mane);
+
+    ctx.restore();
   }
 
   function update() {
     if (keys.up) pony.y -= 2;
     if (keys.down) pony.y += 2;
-    if (keys.left) pony.x -= 2;
-    if (keys.right) pony.x += 2;
 
-    pony.x = Math.max(0, Math.min(canvas.width - pony.size, pony.x));
-    pony.y = Math.max(0, Math.min(canvas.height - pony.size, pony.y));
+    if (keys.left) {
+      pony.x -= 2;
+      facing = "left";
+    }
+    if (keys.right) {
+      pony.x += 2;
+      facing = "right";
+    }
+
+    pony.x = Math.max(0, Math.min(canvas.width - 64, pony.x));
+    pony.y = Math.max(0, Math.min(canvas.height - 64, pony.y));
 
     draw();
     requestAnimationFrame(update);
@@ -143,8 +158,8 @@
     if (e.key === "ArrowRight") release("right");
   });
 
-  draw();   // dibuja al cargar
-  update(); // inicia loop del juego
+  draw();
+  update();
 </script>
 
 </body>
