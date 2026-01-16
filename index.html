@@ -1,167 +1,40 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Forgotten Town</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      margin: 0;
-      background: #2b2b2b;
-      color: white;
-      font-family: Arial, sans-serif;
-      text-align: center;
-    }
-    canvas {
-      background: #3a3a3a;
-      margin-top: 10px;
-      border-radius: 8px;
-    }
-    .controls {
-      position: fixed;
-      bottom: 12px;
-      left: 0;
-      right: 0;
-      text-align: center;
-    }
-    .controls button {
-      width: 60px;
-      height: 60px;
-      font-size: 22px;
-      margin: 4px;
-      border-radius: 8px;
-      border: none;
-      background-color: #8a5ccf;
-      color: white;
-    }
-    .controls button:active {
-      background-color: #6a3fa0;
-    }
-  </style>
-</head>
-<body>
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-<h1>🐴 Forgotten Town</h1>
-<p>Servidor personalizado inspirado en Pony Town</p>
+  const px = 6; // tamaño medio (ajustable después)
+  const baseX = pony.x;
+  const baseY = pony.y;
 
-<canvas id="game" width="800" height="600"></canvas>
+  // Sprite EXACTO (simplificado 1:1 del pixel art)
+  const sprite = [
+    ["", "", "", "", "", "", "", "#bfb7b5", "#bfb7b5", "", ""],
+    ["", "", "", "", "", "#bfb7b5", "#bfb7b5", "#9f9896", "#9f9896", "", ""],
+    ["", "", "", "", "#bfb7b5", "#bfb7b5", "#9f9896", "#8c8583", "#8c8583", "", ""],
+    ["", "", "", "#7b001f", "#7b001f", "#bfb7b5", "#9f9896", "#8c8583", "", "", ""],
+    ["", "", "#7b001f", "#a8002d", "#7b001f", "#7b001f", "", "", "", "", ""],
+    ["", "", "#7b001f", "#a8002d", "#a8002d", "#7b001f", "", "", "", "", ""],
+    ["", "", "#7b001f", "#7b001f", "#7b001f", "", "", "", "", "", ""],
 
-<div class="controls">
-  <button ontouchstart="press('up')" ontouchend="release('up')">⬆️</button><br>
-  <button ontouchstart="press('left')" ontouchend="release('left')">⬅️</button>
-  <button ontouchstart="press('right')" ontouchend="release('right')">➡️</button><br>
-  <button ontouchstart="press('down')" ontouchend="release('down')">⬇️</button>
-</div>
+    ["", "#7b001f", "#7b001f", "#7b001f", "#7b001f", "", "", "", "", "", ""],
+    ["", "#7b001f", "#a8002d", "#a8002d", "#7b001f", "", "", "", "", "", ""],
+    ["", "#7b001f", "#7b001f", "#7b001f", "#7b001f", "", "", "", "", "", ""],
 
-<script>
-  const canvas = document.getElementById("game");
-  const ctx = canvas.getContext("2d");
+    ["", "", "#7b001f", "", "#7b001f", "", "", "", "", "", ""],
+    ["", "", "#7b001f", "", "#7b001f", "", "", "", "", "", ""]
+  ];
 
-  let pony = { x: 130, y: 130 };
-  let keys = { up:false, down:false, left:false, right:false };
-  let facing = "right"; // dirección del pony
+  for (let y = 0; y < sprite.length; y++) {
+    for (let x = 0; x < sprite[y].length; x++) {
+      const color = sprite[y][x];
+      if (!color) continue;
 
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let drawX = baseX + x * px;
+      if (facing === "left") {
+        drawX = baseX + (sprite[y].length - 1 - x) * px;
+      }
 
-ctx.save();
-
-if (facing === "left") {
-  ctx.translate(pony.x * 2 + 64, 0);
-  ctx.scale(-1, 1);
-}
-
-    const px = 8;
-
-    function pixel(x, y, color) {
       ctx.fillStyle = color;
-      ctx.fillRect(pony.x + x * px, pony.y + y * px, px, px);
+      ctx.fillRect(drawX, baseY + y * px, px, px);
     }
-
-    const body = "#c58cff";
-    const mane = "#8a5ccf";
-    const eye = "#000000";
-    const leg = "#6a3fa0";
-
-    // cabeza
-    pixel(5,1, body);
-    pixel(6,1, body);
-    pixel(4,2, body);
-    pixel(5,2, body);
-    pixel(6,2, body);
-    pixel(7,2, body);
-    pixel(5,3, body);
-    pixel(6,3, body);
-
-    // ojo
-    pixel(6,2, eye);
-
-    // cuerpo
-    pixel(1,3, body);
-    pixel(2,3, body);
-    pixel(3,3, body);
-    pixel(4,3, body);
-    pixel(1,4, body);
-    pixel(2,4, body);
-    pixel(3,4, body);
-    pixel(4,4, body);
-
-    // melena
-    pixel(4,1, mane);
-    pixel(4,0, mane);
-    pixel(5,0, mane);
-
-    // patas
-    pixel(1,5, leg);
-    pixel(3,5, leg);
-
-    // cola
-    pixel(0,3, mane);
-    pixel(0,4, mane);
-
-    ctx.restore();
   }
-
-  function update() {
-    if (keys.up) pony.y -= 2;
-    if (keys.down) pony.y += 2;
-
-    if (keys.left) {
-      pony.x -= 2;
-      facing = "left";
-    }
-    if (keys.right) {
-      pony.x += 2;
-      facing = "right";
-    }
-
-    pony.x = Math.max(0, Math.min(canvas.width - 64, pony.x));
-    pony.y = Math.max(0, Math.min(canvas.height - 64, pony.y));
-
-    draw();
-    requestAnimationFrame(update);
-  }
-
-  function press(dir) { keys[dir] = true; }
-  function release(dir) { keys[dir] = false; }
-
-  document.addEventListener("keydown", e => {
-    if (e.key === "ArrowUp") press("up");
-    if (e.key === "ArrowDown") press("down");
-    if (e.key === "ArrowLeft") press("left");
-    if (e.key === "ArrowRight") press("right");
-  });
-
-  document.addEventListener("keyup", e => {
-    if (e.key === "ArrowUp") release("up");
-    if (e.key === "ArrowDown") release("down");
-    if (e.key === "ArrowLeft") release("left");
-    if (e.key === "ArrowRight") release("right");
-  });
-
-  draw();
-  update();
-</script>
-
-</body>
-</html>
+}
