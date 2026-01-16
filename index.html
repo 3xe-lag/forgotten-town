@@ -58,67 +58,29 @@ let pony = { x: 300, y: 200 };
 let keys = { up:false, down:false, left:false, right:false };
 let facing = "right";
 
-// ===== DIBUJO DEL PONY =====
+// ===== IMAGEN DEL PONY =====
+const ponyImg = new Image();
+ponyImg.src = "pony-town--stand-acolchado-4x.png";
+
+// tamaño del sprite en pantalla
+const PONY_SIZE = 64;
+
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const px = 5; // tamaño del pixel
-  const baseX = pony.x;
-  const baseY = pony.y;
-
-  const C = {
-    R: "#8b0030", // cuerpo rojo
-    r: "#640020", // sombra cuerpo
-    H: "#b8b0ad", // melena clara
-    h: "#8f8885", // melena sombra
-    G: "#2ecc71", // ojo verde
-    ".": null
-  };
-
-  // Sprite MUCHO más parecido a la imagen
-  const sprite = [
-    "....HHHHH......",
-    "...HHHHHHH.....",
-    "..HHHHHHHH.....",
-    "..RRRRRRRR.....",
-    ".RRRRRRRRR.....",
-    ".RRRRRRRRR.....",
-    "..RRRRRRRRR....",
-    "..RRRRRRRRR....",
-    "..RRRRRRRRR....",
-    "...r.R...r.....",
-    "...r.R...r.....",
-    ".hh............",
-    ".hh............"
-  ];
-
   ctx.save();
 
-  // giro izquierda / derecha
   if (facing === "left") {
-    ctx.translate(baseX + sprite[0].length * px, 0);
+    ctx.translate(pony.x + PONY_SIZE, pony.y);
     ctx.scale(-1, 1);
+    ctx.drawImage(ponyImg, 0, 0, PONY_SIZE, PONY_SIZE);
   } else {
-    ctx.translate(baseX, 0);
+    ctx.drawImage(ponyImg, pony.x, pony.y, PONY_SIZE, PONY_SIZE);
   }
-
-  for (let y = 0; y < sprite.length; y++) {
-    for (let x = 0; x < sprite[y].length; x++) {
-      const color = C[sprite[y][x]];
-      if (!color) continue;
-
-      ctx.fillStyle = color;
-      ctx.fillRect(x * px, baseY + y * px, px, px);
-    }
-  }
-
-  // 👁️ ojo (posición exacta)
-  ctx.fillStyle = C.G;
-  ctx.fillRect(9 * px, baseY + 4 * px, px, px);
 
   ctx.restore();
-  }
-// ===== UPDATE =====
+}
+
 function update() {
   if (keys.up) pony.y -= 2;
   if (keys.down) pony.y += 2;
@@ -132,8 +94,8 @@ function update() {
     facing = "right";
   }
 
-  pony.x = Math.max(0, Math.min(canvas.width - 150, pony.x));
-  pony.y = Math.max(0, Math.min(canvas.height - 150, pony.y));
+  pony.x = Math.max(0, Math.min(canvas.width - PONY_SIZE, pony.x));
+  pony.y = Math.max(0, Math.min(canvas.height - PONY_SIZE, pony.y));
 
   draw();
   requestAnimationFrame(update);
