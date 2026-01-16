@@ -68,37 +68,47 @@ const MANE_DARK = "#a79acb";
 const EYE = "#2ecc71";
 const OUTLINE = "#3a1f5c";
 
+const BODY = "#7d4bb3";
+const BODY_DARK = "#5a2f8a";
+const MANE = "#cfc3e8";
+const MANE_DARK = "#a79acb";
+const EYE = "#2ecc71";
+
 const sprite = [
-  ["", "", "", "", "", MANE, MANE, MANE, "", "", ""],
-  ["", "", "", "", MANE_DARK, MANE, MANE, MANE, MANE, "", ""],
-  ["", "", "", BODY_DARK, BODY, BODY, BODY, BODY, MANE, "", ""],
-  ["", "", BODY_DARK, BODY, BODY, BODY, BODY, BODY, BODY, "", ""],
-  ["", BODY_DARK, BODY, BODY, BODY, BODY, BODY, BODY, BODY, "", ""],
-  ["", BODY_DARK, BODY, BODY, BODY, BODY, BODY, BODY, BODY, "", ""],
+  // melena / cabeza
+  ["", "", "", "", MANE, MANE, MANE, MANE, "", "", "", ""],
+  ["", "", "", MANE_DARK, MANE, MANE, MANE, MANE, MANE, "", "", ""],
+  ["", "", BODY_DARK, BODY, BODY, BODY, BODY, BODY, MANE, "", "", ""],
+  ["", BODY_DARK, BODY, BODY, BODY, BODY, BODY, BODY, BODY, "", "", ""],
 
-  ["", "", BODY_DARK, BODY, BODY, BODY, BODY, BODY, "", "", ""],
-  ["", "", "", BODY, BODY, BODY, BODY, "", "", "", ""],
+  // cuello + pecho
+  ["", BODY_DARK, BODY, BODY, BODY, BODY, BODY, BODY, BODY, "", "", ""],
+  ["", BODY_DARK, BODY, BODY, BODY, BODY, BODY, BODY, BODY, "", "", ""],
 
-  ["", "", BODY_DARK, BODY, "", BODY, "", BODY, "", "", ""],
-  ["", "", BODY_DARK, BODY, "", BODY, "", BODY, "", "", ""],
+  // torso largo
+  ["", "", BODY_DARK, BODY, BODY, BODY, BODY, BODY, BODY, BODY, "", ""],
+  ["", "", BODY_DARK, BODY, BODY, BODY, BODY, BODY, BODY, BODY, "", ""],
+  ["", "", BODY_DARK, BODY, BODY, BODY, BODY, BODY, BODY, BODY, "", ""],
 
-  ["", "", "", BODY_DARK, "", BODY_DARK, "", "", "", "", ""],
-  ["", "", "", BODY_DARK, "", BODY_DARK, "", "", "", "", ""],
+  // patas delanteras
+  ["", "", BODY_DARK, BODY, "", BODY, "", BODY, "", "", "", ""],
+  ["", "", BODY_DARK, BODY, "", BODY, "", BODY, "", "", "", ""],
 
-  ["", "", "", "", BODY_DARK, BODY_DARK, "", "", "", "", ""],
-  ["", "", "", "", BODY_DARK, BODY_DARK, "", "", "", "", ""],
+  // vientre
+  ["", "", "", BODY_DARK, BODY, BODY, BODY, BODY, "", "", "", ""],
 
-  ["", "", "", "", "", BODY_DARK, BODY_DARK, "", "", "", ""],
-  ["", "", "", "", "", BODY_DARK, BODY_DARK, "", "", "", ""],
+  // patas traseras
+  ["", "", "", BODY_DARK, BODY, "", BODY, "", "", "", "", ""],
+  ["", "", "", BODY_DARK, BODY, "", BODY, "", "", "", "", ""],
 
-  ["", "", "", "", "", "", BODY_DARK, BODY_DARK, "", "", ""],
-  ["", "", "", "", "", "", BODY_DARK, BODY_DARK, "", "", ""],
+  // cola
+  ["", "", "", "", BODY_DARK, BODY_DARK, "", "", "", "", "", ""],
+  ["", "", "", "", BODY_DARK, BODY_DARK, "", "", "", "", "", ""],
+  ["", "", "", "", "", BODY_DARK, BODY_DARK, "", "", "", "", ""],
+  ["", "", "", "", "", BODY_DARK, BODY_DARK, "", "", "", "", ""],
 
-  ["", "", "", "", "", "", "", BODY_DARK, BODY_DARK, "", ""],
-  ["", "", "", "", "", "", "", BODY_DARK, BODY_DARK, "", ""],
-
-  // ojo
-  ["", "", "", "", "", "", EYE, "", "", "", ""]
+  // ojo (posición correcta en la cabeza)
+  ["", "", "", "", "", "", EYE, "", "", "", "", ""]
 ];
 
   function draw() {
