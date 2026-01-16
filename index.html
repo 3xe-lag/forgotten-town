@@ -24,14 +24,51 @@
   <canvas id="game" width="800" height="600"></canvas>
 
   <script>
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
+    <script>
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
 
+  let pony = { x: 130, y: 130, size: 40 };
+  let keys = {};
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#ffb6c1";
-    ctx.fillRect(380, 280, 40, 40);
+    ctx.fillRect(pony.x, pony.y, pony.size, pony.size);
+  }
 
-    ctx.fillStyle = "white";
-    ctx.fillText("Pony demo", 360, 270);
+  function update() {
+    if (keys.up) pony.y -= 2;
+    if (keys.down) pony.y += 2;
+    if (keys.left) pony.x -= 2;
+    if (keys.right) pony.x += 2;
+
+    pony.x = Math.max(0, Math.min(canvas.width - pony.size, pony.x));
+    pony.y = Math.max(0, Math.min(canvas.height - pony.size, pony.y));
+
+    draw();
+    requestAnimationFrame(update);
+  }
+
+  function press(dir) { keys[dir] = true; }
+  function release(dir) { keys[dir] = false; }
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "ArrowUp") keys.up = true;
+    if (e.key === "ArrowDown") keys.down = true;
+    if (e.key === "ArrowLeft") keys.left = true;
+    if (e.key === "ArrowRight") keys.right = true;
+  });
+
+  document.addEventListener("keyup", e => {
+    if (e.key === "ArrowUp") keys.up = false;
+    if (e.key === "ArrowDown") keys.down = false;
+    if (e.key === "ArrowLeft") keys.left = false;
+    if (e.key === "ArrowRight") keys.right = false;
+  });
+
+  update();
+</script>
   </script>
 </body>
 </html>
