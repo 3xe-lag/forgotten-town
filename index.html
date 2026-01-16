@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Forgotten Town</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
     body {
       margin: 0;
@@ -12,18 +13,22 @@
       font-family: Arial, sans-serif;
       text-align: center;
     }
+
     canvas {
       background: #3a3a3a;
       margin-top: 10px;
       border-radius: 8px;
     }
+
     .controls {
       position: fixed;
       bottom: 12px;
       left: 0;
       right: 0;
       text-align: center;
+      pointer-events: auto;
     }
+
     .controls button {
       width: 60px;
       height: 60px;
@@ -36,6 +41,7 @@
     }
   </style>
 </head>
+
 <body>
 
 <h1>🐴 Forgotten Town</h1>
@@ -51,6 +57,7 @@
 </div>
 
 <script>
+/* ===== SETUP ===== */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -58,13 +65,13 @@ let pony = { x: 300, y: 200 };
 let keys = { up:false, down:false, left:false, right:false };
 let facing = "right";
 
-// ===== IMAGEN DEL PONY =====
-const ponyImg = new Image();
-ponyImg.src = "pony-town--stand-acolchado-4x.png";
-
-// tamaño del sprite en pantalla
 const PONY_SIZE = 96;
 
+/* ===== CARGAR IMAGEN ===== */
+const ponyImg = new Image();
+ponyImg.src = "./pony-town--stand-acolchado-4x.png";
+
+/* ===== DIBUJO ===== */
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -81,6 +88,7 @@ function draw() {
   ctx.restore();
 }
 
+/* ===== UPDATE ===== */
 function update() {
   if (keys.up) pony.y -= 2;
   if (keys.down) pony.y += 2;
@@ -101,6 +109,7 @@ function update() {
   requestAnimationFrame(update);
 }
 
+/* ===== CONTROLES ===== */
 function press(dir) { keys[dir] = true; }
 function release(dir) { keys[dir] = false; }
 
@@ -118,7 +127,15 @@ document.addEventListener("keyup", e => {
   if (e.key === "ArrowRight") release("right");
 });
 
-update();
+/* ===== ARRANCAR CUANDO CARGA ===== */
+ponyImg.onload = () => {
+  console.log("✅ Pony cargado correctamente");
+  requestAnimationFrame(update);
+};
+
+ponyImg.onerror = () => {
+  alert("❌ Error cargando la imagen del pony. Revisá el nombre del archivo.");
+};
 </script>
 
 </body>
