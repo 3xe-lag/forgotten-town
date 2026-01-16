@@ -57,17 +57,42 @@
   let pony = { x: 300, y: 200 };
   let keys = { up:false, down:false, left:false, right:false };
 
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // DEBUG visible
-    ctx.fillStyle = "#8a5ccf";
-    ctx.fillRect(pony.x, pony.y, 50, 50);
+  const px = 6; // tamaño del pixel
+  const x = pony.x;
+  const y = pony.y;
 
-    ctx.fillStyle = "white";
-    ctx.font = "16px Arial";
-    ctx.fillText("PONY OK", pony.x, pony.y - 6);
+  function p(dx, dy, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x + dx * px, y + dy * px, px, px);
   }
+
+  const body = "#8a5ccf";
+  const bodyDark = "#6a3fa0";
+  const mane = "#cfc3e8";
+  const eye = "#2ecc71";
+
+  // cabeza
+  p(4,0, mane); p(5,0, mane);
+  p(3,1, body); p(4,1, body); p(5,1, body); p(6,1, body);
+  p(4,2, body); p(5,2, body);
+  p(5,2, eye);
+
+  // cuello
+  p(4,3, body); p(5,3, body);
+
+  // cuerpo largo
+  p(2,4, bodyDark); p(3,4, body); p(4,4, body); p(5,4, body); p(6,4, body);
+  p(2,5, bodyDark); p(3,5, body); p(4,5, body); p(5,5, body); p(6,5, body);
+
+  // patas
+  p(3,6, bodyDark); p(5,6, bodyDark);
+
+  // cola
+  p(1,4, mane); p(0,5, mane);
+}
 
   function update() {
     if (keys.up) pony.y -= 2;
