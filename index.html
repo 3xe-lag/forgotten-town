@@ -50,9 +50,43 @@
   let keys = { up:false, down:false, left:false, right:false };
 
   function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#ffb6c1";
-    ctx.fillRect(pony.x, pony.y, pony.size, pony.size);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const p = pony;
+  const px = 4; // tamaño de cada pixel
+
+  function pixel(x, y, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(p.x + x * px, p.y + y * px, px, px);
+  }
+
+  // cuerpo
+  pixel(1,3,"#c58cff");
+  pixel(2,3,"#c58cff");
+  pixel(3,3,"#c58cff");
+  pixel(4,3,"#c58cff");
+
+  pixel(2,4,"#c58cff");
+  pixel(3,4,"#c58cff");
+
+  // cabeza
+  pixel(5,2,"#c58cff");
+  pixel(6,2,"#c58cff");
+  pixel(5,3,"#c58cff");
+  pixel(6,3,"#c58cff");
+
+  // oreja
+  pixel(6,1,"#a46de0");
+
+  // ojo
+  pixel(6,3,"#000000");
+
+  // patas
+  pixel(2,5,"#7a4dbb");
+  pixel(3,5,"#7a4dbb");
+
+  // cola
+  pixel(0,3,"#a46de0");
   }
 
   function update() {
