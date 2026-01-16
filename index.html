@@ -61,14 +61,14 @@ let facing = "right";
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const px = 12;
+  const px = 8; // tamaño del pixel (pony más grande)
   const y = pony.y;
 
   ctx.save();
 
   // 🔁 giro según dirección
   if (facing === "left") {
-    ctx.translate(pony.x + 10 * px, 0);
+    ctx.translate(pony.x + 14 * px, 0);
     ctx.scale(-1, 1);
   } else {
     ctx.translate(pony.x, 0);
@@ -82,29 +82,42 @@ function draw() {
   const body = "#8a5ccf";
   const bodyDark = "#6a3fa0";
   const mane = "#cfc3e8";
+  const maneDark = "#a79acb";
+  const eyeWhite = "#ffffff";
   const eye = "#2ecc71";
 
-  // cabeza
-  p(4,0, mane); p(5,0, mane);
-  p(3,1, body); p(4,1, body); p(5,1, body); p(6,1, body);
-  p(4,2, body); p(5,2, body);
-  p(5,2, eye);
+  // 🧠 CABEZA
+  p(6,0, mane); p(7,0, mane); p(8,0, mane);
+  p(5,1, maneDark); p(6,1, body); p(7,1, body); p(8,1, body); p(9,1, body);
+  p(5,2, body); p(6,2, body); p(7,2, body); p(8,2, body); p(9,2, body);
+  p(6,3, body); p(7,3, body); p(8,3, body);
 
-  // cuello
-  p(4,3, body); p(5,3, body);
+  // 👁️ OJO
+  p(8,2, eyeWhite);
+  p(9,2, eye);
 
-  // cuerpo
-  p(2,4, bodyDark); p(3,4, body); p(4,4, body); p(5,4, body); p(6,4, body);
-  p(2,5, bodyDark); p(3,5, body); p(4,5, body); p(5,5, body); p(6,5, body);
+  // 🦒 CUELLO
+  p(6,4, body); p(7,4, body); p(8,4, body);
+  p(6,5, body); p(7,5, body); p(8,5, body);
 
-  // patas
-  p(3,6, bodyDark); p(5,6, bodyDark);
+  // 🐎 CUERPO
+  p(4,6, bodyDark); p(5,6, body); p(6,6, body); p(7,6, body); p(8,6, body); p(9,6, body);
+  p(4,7, bodyDark); p(5,7, body); p(6,7, body); p(7,7, body); p(8,7, body); p(9,7, body);
+  p(4,8, bodyDark); p(5,8, body); p(6,8, body); p(7,8, body); p(8,8, body); p(9,8, body);
 
-  // cola
-  p(1,4, mane); p(0,5, mane);
+  // 🐾 PATAS
+  p(5,9, bodyDark); p(7,9, bodyDark);
+  p(5,10, bodyDark); p(7,10, bodyDark);
+
+  p(8,9, bodyDark); p(10,9, bodyDark);
+  p(8,10, bodyDark); p(10,10, bodyDark);
+
+  // 🦄 COLA
+  p(3,7, mane); p(2,8, mane); p(1,9, mane);
+  p(2,9, maneDark);
 
   ctx.restore();
-}
+    }
 
 function update() {
   if (keys.up) pony.y -= 2;
