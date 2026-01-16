@@ -62,14 +62,45 @@
   let facing = "right"; // dirección del pony
 
   function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-ctx.save();
+  const px = 6; // tamaño medio (ajustable después)
+  const baseX = pony.x;
+  const baseY = pony.y;
 
-if (facing === "left") {
-  ctx.translate(pony.x * 2 + 64, 0);
-  ctx.scale(-1, 1);
-}
+  // Sprite EXACTO (simplificado 1:1 del pixel art)
+  const sprite = [
+    ["", "", "", "", "", "", "", "#bfb7b5", "#bfb7b5", "", ""],
+    ["", "", "", "", "", "#bfb7b5", "#bfb7b5", "#9f9896", "#9f9896", "", ""],
+    ["", "", "", "", "#bfb7b5", "#bfb7b5", "#9f9896", "#8c8583", "#8c8583", "", ""],
+    ["", "", "", "#7b001f", "#7b001f", "#bfb7b5", "#9f9896", "#8c8583", "", "", ""],
+    ["", "", "#7b001f", "#a8002d", "#7b001f", "#7b001f", "", "", "", "", ""],
+    ["", "", "#7b001f", "#a8002d", "#a8002d", "#7b001f", "", "", "", "", ""],
+    ["", "", "#7b001f", "#7b001f", "#7b001f", "", "", "", "", "", ""],
+
+    ["", "#7b001f", "#7b001f", "#7b001f", "#7b001f", "", "", "", "", "", ""],
+    ["", "#7b001f", "#a8002d", "#a8002d", "#7b001f", "", "", "", "", "", ""],
+    ["", "#7b001f", "#7b001f", "#7b001f", "#7b001f", "", "", "", "", "", ""],
+
+    ["", "", "#7b001f", "", "#7b001f", "", "", "", "", "", ""],
+    ["", "", "#7b001f", "", "#7b001f", "", "", "", "", "", ""]
+  ];
+
+  for (let y = 0; y < sprite.length; y++) {
+    for (let x = 0; x < sprite[y].length; x++) {
+      const color = sprite[y][x];
+      if (!color) continue;
+
+      let drawX = baseX + x * px;
+      if (facing === "left") {
+        drawX = baseX + (sprite[y].length - 1 - x) * px;
+      }
+
+      ctx.fillStyle = color;
+      ctx.fillRect(drawX, baseY + y * px, px, px);
+    }
+  }
+  }
 
     const px = 8;
 
