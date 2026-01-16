@@ -60,13 +60,22 @@
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const px = 6; // tamaño del pixel
-  const x = pony.x;
+  const px = 6;
   const y = pony.y;
+
+  ctx.save();
+
+  // 🔁 giro según dirección
+  if (facing === "left") {
+    ctx.translate(pony.x + 10 * px, 0);
+    ctx.scale(-1, 1);
+  } else {
+    ctx.translate(pony.x, 0);
+  }
 
   function p(dx, dy, color) {
     ctx.fillStyle = color;
-    ctx.fillRect(x + dx * px, y + dy * px, px, px);
+    ctx.fillRect(dx * px, y + dy * px, px, px);
   }
 
   const body = "#8a5ccf";
@@ -83,7 +92,7 @@ function draw() {
   // cuello
   p(4,3, body); p(5,3, body);
 
-  // cuerpo largo
+  // cuerpo
   p(2,4, bodyDark); p(3,4, body); p(4,4, body); p(5,4, body); p(6,4, body);
   p(2,5, bodyDark); p(3,5, body); p(4,5, body); p(5,5, body); p(6,5, body);
 
@@ -92,6 +101,8 @@ function draw() {
 
   // cola
   p(1,4, mane); p(0,5, mane);
+
+  ctx.restore();
 }
 
   function update() {
