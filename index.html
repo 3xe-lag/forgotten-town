@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Forgotten Town</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       margin: 0;
@@ -13,22 +14,38 @@
     }
     canvas {
       background: #3a3a3a;
-      margin-top: 20px;
+      margin-top: 10px;
+      border-radius: 8px;
+    }
+    button {
+      padding: 14px;
+      margin: 5px;
+      font-size: 18px;
+      border-radius: 8px;
+      border: none;
     }
   </style>
 </head>
 <body>
-  <h1>🐴 Forgotten Town</h1>
-  <p>Servidor personalizado inspirado en Pony Town</p>
 
-  <canvas id="game" width="800" height="600"></canvas>
+<h1>🐴 Forgotten Town</h1>
+<p>Servidor personalizado inspirado en Pony Town</p>
 
-  <script>
-    const canvas = document.getElementById("game");
+<canvas id="game" width="800" height="600"></canvas>
+
+<div>
+  <button ontouchstart="press('up')" ontouchend="release('up')">⬆️</button><br>
+  <button ontouchstart="press('left')" ontouchend="release('left')">⬅️</button>
+  <button ontouchstart="press('right')" ontouchend="release('right')">➡️</button><br>
+  <button ontouchstart="press('down')" ontouchend="release('down')">⬇️</button>
+</div>
+
+<script>
+  const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
 
   let pony = { x: 130, y: 130, size: 40 };
-  let keys = {};
+  let keys = { up:false, down:false, left:false, right:false };
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -53,23 +70,22 @@
   function release(dir) { keys[dir] = false; }
 
   document.addEventListener("keydown", e => {
-    if (e.key === "ArrowUp") keys.up = true;
-    if (e.key === "ArrowDown") keys.down = true;
-    if (e.key === "ArrowLeft") keys.left = true;
-    if (e.key === "ArrowRight") keys.right = true;
+    if (e.key === "ArrowUp") press("up");
+    if (e.key === "ArrowDown") press("down");
+    if (e.key === "ArrowLeft") press("left");
+    if (e.key === "ArrowRight") press("right");
   });
 
   document.addEventListener("keyup", e => {
-    if (e.key === "ArrowUp") keys.up = false;
-    if (e.key === "ArrowDown") keys.down = false;
-    if (e.key === "ArrowLeft") keys.left = false;
-    if (e.key === "ArrowRight") keys.right = false;
+    if (e.key === "ArrowUp") release("up");
+    if (e.key === "ArrowDown") release("down");
+    if (e.key === "ArrowLeft") release("left");
+    if (e.key === "ArrowRight") release("right");
   });
 
-  update();
+  draw();   // 👈 aparece al cargar
+  update(); // 👈 loop del juego
 </script>
-  </script>
+
 </body>
 </html>
-    <script>
-  
