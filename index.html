@@ -51,74 +51,69 @@
 </div>
 
 <script>
-  const canvas = document.getElementById("game");
-  const ctx = canvas.getContext("2d");
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
 let pony = { x: 300, y: 200 };
 let keys = { up:false, down:false, left:false, right:false };
 let facing = "right";
-  
+
+// ===== DIBUJO DEL PONY =====
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const px = 8; // tamaño del pixel (pony más grande)
-  const y = pony.y;
+  const px = 6;
+  const baseY = pony.y;
 
   ctx.save();
 
-  // 🔁 giro según dirección
   if (facing === "left") {
-    ctx.translate(pony.x + 14 * px, 0);
+    ctx.translate(pony.x + 22 * px, 0);
     ctx.scale(-1, 1);
   } else {
     ctx.translate(pony.x, 0);
   }
 
-  function p(dx, dy, color) {
-    ctx.fillStyle = color;
-    ctx.fillRect(dx * px, y + dy * px, px, px);
+  function p(x, y, c) {
+    ctx.fillStyle = c;
+    ctx.fillRect(x * px, baseY + y * px, px, px);
   }
 
-  const body = "#8a5ccf";
-  const bodyDark = "#6a3fa0";
-  const mane = "#cfc3e8";
-  const maneDark = "#a79acb";
-  const eyeWhite = "#ffffff";
-  const eye = "#2ecc71";
+  const BODY = "#8b0030";
+  const BODY_D = "#640020";
+  const MANE = "#b8b0ad";
+  const MANE_D = "#8f8885";
+  const EYE = "#2ecc71";
 
-  // 🧠 CABEZA
-  p(6,0, mane); p(7,0, mane); p(8,0, mane);
-  p(5,1, maneDark); p(6,1, body); p(7,1, body); p(8,1, body); p(9,1, body);
-  p(5,2, body); p(6,2, body); p(7,2, body); p(8,2, body); p(9,2, body);
-  p(6,3, body); p(7,3, body); p(8,3, body);
+  // cabeza
+  p(8,0, MANE); p(9,0, MANE); p(10,0, MANE);
+  p(7,1, MANE); p(8,1, MANE); p(9,1, MANE); p(10,1, MANE);
+  p(7,2, BODY); p(8,2, BODY); p(9,2, BODY); p(10,2, BODY);
+  p(7,3, BODY); p(8,3, BODY); p(9,3, BODY); p(10,3, BODY);
+  p(9,3, EYE);
 
-  // 👁️ OJO
-  p(8,2, eyeWhite);
-  p(9,2, eye);
+  // cuello
+  p(8,4, BODY); p(9,4, BODY);
+  p(8,5, BODY); p(9,5, BODY);
 
-  // 🦒 CUELLO
-  p(6,4, body); p(7,4, body); p(8,4, body);
-  p(6,5, body); p(7,5, body); p(8,5, body);
+  // cuerpo
+  p(5,6, BODY_D); p(6,6, BODY); p(7,6, BODY); p(8,6, BODY); p(9,6, BODY);
+  p(5,7, BODY_D); p(6,7, BODY); p(7,7, BODY); p(8,7, BODY); p(9,7, BODY);
+  p(5,8, BODY_D); p(6,8, BODY); p(7,8, BODY); p(8,8, BODY); p(9,8, BODY);
 
-  // 🐎 CUERPO
-  p(4,6, bodyDark); p(5,6, body); p(6,6, body); p(7,6, body); p(8,6, body); p(9,6, body);
-  p(4,7, bodyDark); p(5,7, body); p(6,7, body); p(7,7, body); p(8,7, body); p(9,7, body);
-  p(4,8, bodyDark); p(5,8, body); p(6,8, body); p(7,8, body); p(8,8, body); p(9,8, body);
+  // patas
+  p(6,9, BODY_D); p(8,9, BODY_D);
+  p(6,10, BODY_D); p(8,10, BODY_D);
 
-  // 🐾 PATAS
-  p(5,9, bodyDark); p(7,9, bodyDark);
-  p(5,10, bodyDark); p(7,10, bodyDark);
-
-  p(8,9, bodyDark); p(10,9, bodyDark);
-  p(8,10, bodyDark); p(10,10, bodyDark);
-
-  // 🦄 COLA
-  p(3,7, mane); p(2,8, mane); p(1,9, mane);
-  p(2,9, maneDark);
+  // cola
+  p(4,7, MANE_D);
+  p(3,8, MANE_D);
+  p(3,9, MANE);
 
   ctx.restore();
-    }
+}
 
+// ===== UPDATE =====
 function update() {
   if (keys.up) pony.y -= 2;
   if (keys.down) pony.y += 2;
@@ -127,36 +122,36 @@ function update() {
     pony.x -= 2;
     facing = "left";
   }
-
   if (keys.right) {
     pony.x += 2;
     facing = "right";
   }
 
-  pony.x = Math.max(0, Math.min(canvas.width - 50, pony.x));
-  pony.y = Math.max(0, Math.min(canvas.height - 50, pony.y));
+  pony.x = Math.max(0, Math.min(canvas.width - 150, pony.x));
+  pony.y = Math.max(0, Math.min(canvas.height - 150, pony.y));
 
   draw();
   requestAnimationFrame(update);
 }
-  function press(dir) { keys[dir] = true; }
-  function release(dir) { keys[dir] = false; }
 
-  document.addEventListener("keydown", e => {
-    if (e.key === "ArrowUp") press("up");
-    if (e.key === "ArrowDown") press("down");
-    if (e.key === "ArrowLeft") press("left");
-    if (e.key === "ArrowRight") press("right");
-  });
+function press(dir) { keys[dir] = true; }
+function release(dir) { keys[dir] = false; }
 
-  document.addEventListener("keyup", e => {
-    if (e.key === "ArrowUp") release("up");
-    if (e.key === "ArrowDown") release("down");
-    if (e.key === "ArrowLeft") release("left");
-    if (e.key === "ArrowRight") release("right");
-  });
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowUp") press("up");
+  if (e.key === "ArrowDown") press("down");
+  if (e.key === "ArrowLeft") press("left");
+  if (e.key === "ArrowRight") press("right");
+});
 
-  update();
+document.addEventListener("keyup", e => {
+  if (e.key === "ArrowUp") release("up");
+  if (e.key === "ArrowDown") release("down");
+  if (e.key === "ArrowLeft") release("left");
+  if (e.key === "ArrowRight") release("right");
+});
+
+update();
 </script>
 
 </body>
