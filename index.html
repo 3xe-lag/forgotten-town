@@ -1,57 +1,48 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Forgotten Town</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Forgotten Town</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    body {
-      margin: 0;
-      background: #2b2b2b;
-      color: white;
-      font-family: Arial, sans-serif;
-      text-align: center;
-    }
+<style>
+body {
+  margin: 0;
+  background: #2b2b2b;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
 
-    h1 {
-      margin: 10px 0 0;
-    }
+canvas {
+  background: #3a3a3a;
+  margin: 10px auto;
+  display: block;
+  border-radius: 8px;
+}
 
-    p {
-      margin: 5px 0 10px;
-      opacity: 0.8;
-    }
+.controls {
+  position: fixed;
+  bottom: 12px;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
 
-    canvas {
-      background: #3a3a3a;
-      border-radius: 10px;
-      display: block;
-      margin: 0 auto;
-    }
-
-    .controls {
-      position: fixed;
-      bottom: 16px;
-      left: 0;
-      right: 0;
-      text-align: center;
-    }
-
-    .controls button {
-      width: 64px;
-      height: 64px;
-      font-size: 24px;
-      margin: 6px;
-      border-radius: 12px;
-      border: none;
-      background-color: #8a5ccf;
-      color: white;
-    }
-  </style>
+.controls button {
+  width: 60px;
+  height: 60px;
+  font-size: 22px;
+  margin: 4px;
+  border-radius: 8px;
+  border: none;
+  background-color: #8a5ccf;
+  color: white;
+}
+</style>
 </head>
-<body>
 
+<body>
 <h1>🐴 Forgotten Town</h1>
 <p>Servidor personalizado inspirado en Pony Town</p>
 
@@ -65,30 +56,36 @@
 </div>
 
 <script>
-/* ===== SETUP ===== */
+/* ===== CANVAS ===== */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const PONY_SIZE = 160;
-
+/* ===== PONY ===== */
 let pony = {
-  x: (canvas.width - PONY_SIZE) / 2,
-  y: (canvas.height - PONY_SIZE) / 2
+  x: canvas.width / 2 - 64,
+  y: canvas.height / 2 - 64,
+  speed: 3
 };
 
 let keys = { up:false, down:false, left:false, right:false };
 let facing = "right";
 
-/* ===== CARGAR IMAGEN (NOMBRE EXACTO) ===== */
+/* ===== SPRITESHEET ===== */
 const ponyImg = new Image();
-ponyImg.src = "pony-town--stand-padded-4x.png";
+ponyImg.src = "pony_walk.png";
+
+/* CONFIGURACIÓN DEL SPRITE */
+const FRAME_COUNT = 15;      // tus 15 fotogramas
+const FRAME_WIDTH = 64;      // ajustable si querés
+const FRAME_HEIGHT = 64;
+const SCALE = 2;             // tamaño en pantalla
+
+let frame = 0;
+let frameTimer = 0;
+const FRAME_DELAY = 6;       // menor = más rápido
 
 ponyImg.onload = () => {
   requestAnimationFrame(update);
-};
-
-ponyImg.onerror = () => {
-  alert("❌ No se pudo cargar la imagen del pony.\nRevisá el nombre del archivo.");
 };
 
 /* ===== DIBUJO ===== */
@@ -98,34 +95,46 @@ function draw() {
   ctx.save();
 
   if (facing === "left") {
-    ctx.translate(pony.x + PONY_SIZE, pony.y);
+    ctx.translate(pony.x + FRAME_WIDTH * SCALE, pony.y);
     ctx.scale(-1, 1);
-    ctx.drawImage(ponyImg, 0, 0, PONY_SIZE, PONY_SIZE);
   } else {
-    ctx.drawImage(ponyImg, pony.x, pony.y, PONY_SIZE, PONY_SIZE);
+    ctx.translate(pony.x, pony.y);
   }
+
+  ctx.drawImage(
+    ponyImg,
+    frame * FRAME_WIDTH, 0,               // recorte
+    FRAME_WIDTH, FRAME_HEIGHT,
+    0, 0,
+    FRAME_WIDTH * SCALE, FRAME_HEIGHT * SCALE
+  );
 
   ctx.restore();
 }
 
 /* ===== UPDATE ===== */
 function update() {
-  const speed = 3;
+  let moving = false;
 
-  if (keys.up) pony.y -= speed;
-  if (keys.down) pony.y += speed;
-  if (keys.left) {
-    pony.x -= speed;
-    facing = "left";
-  }
-  if (keys.right) {
-    pony.x += speed;
-    facing = "right";
-  }
+  if (keys.up)    { pony.y -= pony.speed; moving = true; }
+  if (keys.down)  { pony.y += pony.speed; moving = true; }
+  if (keys.left)  { pony.x -= pony.speed; facing = "left";  moving = true; }
+  if (keys.right) { pony.x += pony.speed; facing = "right"; moving = true; }
 
   // límites
-  pony.x = Math.max(0, Math.min(canvas.width - PONY_SIZE, pony.x));
-  pony.y = Math.max(0, Math.min(canvas.height - PONY_SIZE, pony.y));
+  pony.x = Math.max(0, Math.min(canvas.width - FRAME_WIDTH * SCALE, pony.x));
+  pony.y = Math.max(0, Math.min(canvas.height - FRAME_HEIGHT * SCALE, pony.y));
+
+  // animación SOLO si se mueve
+  if (moving) {
+    frameTimer++;
+    if (frameTimer >= FRAME_DELAY) {
+      frame = (frame + 1) % FRAME_COUNT;
+      frameTimer = 0;
+    }
+  } else {
+    frame = 0; // frame quieto
+  }
 
   draw();
   requestAnimationFrame(update);
@@ -149,6 +158,5 @@ document.addEventListener("keyup", e => {
   if (e.key === "ArrowRight") release("right");
 });
 </script>
-
 </body>
 </html>
