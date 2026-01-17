@@ -1,9 +1,9 @@
-q<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Forgotten Town</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
     body {
@@ -19,7 +19,6 @@ q<!DOCTYPE html>
       margin-top: 10px;
       border-radius: 8px;
       max-width: 100%;
-      height: auto;
     }
 
     .controls {
@@ -61,10 +60,8 @@ q<!DOCTYPE html>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-/* Tamaño del pony (más grande) */
-const PONY_SIZE = 160;
+const PONY_SIZE = 140; // tamaño visible del pony
 
-/* Arranca CENTRADO */
 let pony = {
   x: (canvas.width - PONY_SIZE) / 2,
   y: (canvas.height - PONY_SIZE) / 2
@@ -75,79 +72,10 @@ let facing = "right";
 
 /* ===== CARGAR IMAGEN ===== */
 const ponyImg = new Image();
-ponyImg.src = "./pony-town--stand-acolchado-4x.png";
-
-let imageLoaded = false;
+ponyImg.src = "pony-town--stand-acolchado-4x.png";
 
 ponyImg.onload = () => {
-  imageLoaded = true;
   requestAnimationFrame(update);
 };
 
-ponyImg.onerror = () => {
-  alert("❌ No se pudo cargar la imagen del pony.\nRevisá el nombre del archivo.");
-};
-
-/* ===== DIBUJO ===== */
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  if (!imageLoaded) return;
-
-  ctx.save();
-
-  if (facing === "left") {
-    ctx.translate(pony.x + PONY_SIZE, pony.y);
-    ctx.scale(-1, 1);
-    ctx.drawImage(ponyImg, 0, 0, PONY_SIZE, PONY_SIZE);
-  } else {
-    ctx.drawImage(ponyImg, pony.x, pony.y, PONY_SIZE, PONY_SIZE);
-  }
-
-  ctx.restore();
-}
-
-/* ===== UPDATE ===== */
-function update() {
-  const speed = 4;
-
-  if (keys.up) pony.y -= speed;
-  if (keys.down) pony.y += speed;
-  if (keys.left) {
-    pony.x -= speed;
-    facing = "left";
-  }
-  if (keys.right) {
-    pony.x += speed;
-    facing = "right";
-  }
-
-  /* Limites del canvas */
-  pony.x = Math.max(0, Math.min(canvas.width - PONY_SIZE, pony.x));
-  pony.y = Math.max(0, Math.min(canvas.height - PONY_SIZE, pony.y));
-
-  draw();
-  requestAnimationFrame(update);
-}
-
-/* ===== CONTROLES ===== */
-function press(dir) { keys[dir] = true; }
-function release(dir) { keys[dir] = false; }
-
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowUp") press("up");
-  if (e.key === "ArrowDown") press("down");
-  if (e.key === "ArrowLeft") press("left");
-  if (e.key === "ArrowRight") press("right");
-});
-
-document.addEventListener("keyup", e => {
-  if (e.key === "ArrowUp") release("up");
-  if (e.key === "ArrowDown") release("down");
-  if (e.key === "ArrowLeft") release("left");
-  if (e.key === "ArrowRight") release("right");
-});
-</script>
-
-</body>
-</html>
+ponyImg
