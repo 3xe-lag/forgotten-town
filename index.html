@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Forgotten Town</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
     body {
@@ -60,7 +60,7 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const PONY_SIZE = 140; // tamaño visible del pony
+const PONY_SIZE = 140;
 
 let pony = {
   x: (canvas.width - PONY_SIZE) / 2,
@@ -70,12 +70,71 @@ let pony = {
 let keys = { up:false, down:false, left:false, right:false };
 let facing = "right";
 
-/* ===== CARGAR IMAGEN ===== */
+/* ===== IMAGEN ===== */
 const ponyImg = new Image();
+let ponyLoaded = false;
+
 ponyImg.src = "pony-town--stand-acolchado-4x.png";
 
 ponyImg.onload = () => {
-  requestAnimationFrame(update);
+  ponyLoaded = true;
+  console.log("🐴 Pony cargado correctamente");
 };
 
-ponyImg
+ponyImg.onerror = () => {
+  console.error("❌ Error cargando imagen");
+};
+
+/* ===== DIBUJO ===== */
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 🔲 Fondo de prueba (SIEMPRE visible)
+  ctx.fillStyle = "#444";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 🐴 Pony solo si la imagen cargó
+  if (ponyLoaded) {
+    ctx.save();
+
+    if (facing === "left") {
+      ctx.translate(pony.x + PONY_SIZE, pony.y);
+      ctx.scale(-1, 1);
+      ctx.drawImage(ponyImg, 0, 0, PONY_SIZE, PONY_SIZE);
+    } else {
+      ctx.drawImage(ponyImg, pony.x, pony.y, PONY_SIZE, PONY_SIZE);
+    }
+
+    ctx.restore();
+  } else {
+    // Texto mientras carga
+    ctx.fillStyle = "white";
+    ctx.font = "20px Arial";
+    ctx.fillText("Cargando pony...", 20, 40);
+  }
+}
+
+/* ===== UPDATE ===== */
+function update() {
+  const speed = 3;
+
+  if (keys.up) pony.y -= speed;
+  if (keys.down) pony.y += speed;
+  if (keys.left) {
+    pony.x -= speed;
+    facing = "left";
+  }
+  if (keys.right) {
+    pony.x += speed;
+    facing = "right";
+  }
+
+  pony.x = Math.max(0, Math.min(canvas.width - PONY_SIZE, pony.x));
+  pony.y = Math.max(0, Math.min(canvas.height - PONY_SIZE, pony.y));
+
+  draw();
+  requestAnimationFrame(update);
+}
+
+/* ===== CONTROLES ===== */
+function press(dir) { keys[dir] = true;
