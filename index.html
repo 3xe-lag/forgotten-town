@@ -14,27 +14,36 @@
       text-align: center;
     }
 
+    h1 {
+      margin: 10px 0 0;
+    }
+
+    p {
+      margin: 5px 0 10px;
+      opacity: 0.8;
+    }
+
     canvas {
       background: #3a3a3a;
-      margin-top: 10px;
-      border-radius: 8px;
-      max-width: 100%;
+      border-radius: 10px;
+      display: block;
+      margin: 0 auto;
     }
 
     .controls {
       position: fixed;
-      bottom: 12px;
+      bottom: 16px;
       left: 0;
       right: 0;
       text-align: center;
     }
 
     .controls button {
-      width: 60px;
-      height: 60px;
-      font-size: 22px;
-      margin: 4px;
-      border-radius: 8px;
+      width: 64px;
+      height: 64px;
+      font-size: 24px;
+      margin: 6px;
+      border-radius: 12px;
       border: none;
       background-color: #8a5ccf;
       color: white;
@@ -46,7 +55,7 @@
 <h1>🐴 Forgotten Town</h1>
 <p>Servidor personalizado inspirado en Pony Town</p>
 
-<canvas id="game" width="800" height="600"></canvas>
+<canvas id="game" width="800" height="500"></canvas>
 
 <div class="controls">
   <button ontouchstart="press('up')" ontouchend="release('up')">⬆️</button><br>
@@ -60,7 +69,7 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const PONY_SIZE = 140;
+const PONY_SIZE = 160;
 
 let pony = {
   x: (canvas.width - PONY_SIZE) / 2,
@@ -70,48 +79,33 @@ let pony = {
 let keys = { up:false, down:false, left:false, right:false };
 let facing = "right";
 
-/* ===== IMAGEN ===== */
+/* ===== CARGAR IMAGEN (NOMBRE EXACTO) ===== */
 const ponyImg = new Image();
-let ponyLoaded = false;
-
-ponyImg.src = "./pony-town--stand-acolchado-4x.png";
+ponyImg.src = "pony-town--stand-padded-4x.png";
 
 ponyImg.onload = () => {
-  ponyLoaded = true;
-  console.log("🐴 Pony cargado correctamente");
+  requestAnimationFrame(update);
 };
 
 ponyImg.onerror = () => {
-  console.error("❌ Error cargando imagen");
+  alert("❌ No se pudo cargar la imagen del pony.\nRevisá el nombre del archivo.");
 };
 
 /* ===== DIBUJO ===== */
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // 🔲 Fondo de prueba (SIEMPRE visible)
-  ctx.fillStyle = "#444";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
 
-  // 🐴 Pony solo si la imagen cargó
-  if (ponyLoaded) {
-    ctx.save();
-
-    if (facing === "left") {
-      ctx.translate(pony.x + PONY_SIZE, pony.y);
-      ctx.scale(-1, 1);
-      ctx.drawImage(ponyImg, 0, 0, PONY_SIZE, PONY_SIZE);
-    } else {
-      ctx.drawImage(ponyImg, pony.x, pony.y, PONY_SIZE, PONY_SIZE);
-    }
-
-    ctx.restore();
+  if (facing === "left") {
+    ctx.translate(pony.x + PONY_SIZE, pony.y);
+    ctx.scale(-1, 1);
+    ctx.drawImage(ponyImg, 0, 0, PONY_SIZE, PONY_SIZE);
   } else {
-    // Texto mientras carga
-    ctx.fillStyle = "white";
-    ctx.font = "20px Arial";
-    ctx.fillText("Cargando pony...", 20, 40);
+    ctx.drawImage(ponyImg, pony.x, pony.y, PONY_SIZE, PONY_SIZE);
   }
+
+  ctx.restore();
 }
 
 /* ===== UPDATE ===== */
@@ -129,6 +123,7 @@ function update() {
     facing = "right";
   }
 
+  // límites
   pony.x = Math.max(0, Math.min(canvas.width - PONY_SIZE, pony.x));
   pony.y = Math.max(0, Math.min(canvas.height - PONY_SIZE, pony.y));
 
@@ -137,4 +132,23 @@ function update() {
 }
 
 /* ===== CONTROLES ===== */
-function press(dir) { keys[dir] = true;
+function press(dir) { keys[dir] = true; }
+function release(dir) { keys[dir] = false; }
+
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowUp") press("up");
+  if (e.key === "ArrowDown") press("down");
+  if (e.key === "ArrowLeft") press("left");
+  if (e.key === "ArrowRight") press("right");
+});
+
+document.addEventListener("keyup", e => {
+  if (e.key === "ArrowUp") release("up");
+  if (e.key === "ArrowDown") release("down");
+  if (e.key === "ArrowLeft") release("left");
+  if (e.key === "ArrowRight") release("right");
+});
+</script>
+
+</body>
+</html>
