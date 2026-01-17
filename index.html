@@ -58,9 +58,6 @@ const ctx = canvas.getContext("2d");
 const ponyImg = new Image();
 ponyImg.src = "./pony_walk.png";
 
-/* === CONFIG SPRITE === */
-const FRAME_WIDTH = 64;
-const FRAME_HEIGHT = 64;
 const TOTAL_FRAMES = 15;
 const SCALE = 2.5;
 
@@ -68,7 +65,9 @@ let frame = 0;
 let frameTimer = 0;
 const FRAME_SPEED = 6;
 
-/* === PLAYER === */
+let frameWidth = 0;
+let frameHeight = 0;
+
 let pony = {
   x: canvas.width / 2,
   y: canvas.height / 2,
@@ -79,16 +78,18 @@ let pony = {
 
 let keys = { up:false, down:false, left:false, right:false };
 
-ponyImg.onload = () => requestAnimationFrame(loop);
+ponyImg.onload = () => {
+  frameWidth = ponyImg.width / TOTAL_FRAMES;
+  frameHeight = ponyImg.height;
+  requestAnimationFrame(loop);
+};
 
-/* === LOOP === */
 function loop() {
   update();
   draw();
   requestAnimationFrame(loop);
 }
 
-/* === UPDATE === */
 function update() {
   pony.moving = false;
 
@@ -111,7 +112,6 @@ function update() {
     pony.moving = true;
   }
 
-  // animación
   if (pony.moving) {
     frameTimer++;
     if (frameTimer >= FRAME_SPEED) {
@@ -119,18 +119,16 @@ function update() {
       frameTimer = 0;
     }
   } else {
-    frame = 0; // quieto → frame 0
+    frame = 0; // quieto SIEMPRE frame 0
   }
 }
 
-/* === DRAW === */
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   ctx.save();
 
   if (pony.facing === "left") {
-    ctx.translate(pony.x + FRAME_WIDTH * SCALE, pony.y);
+    ctx.translate(pony.x + frameWidth * SCALE, pony.y);
     ctx.scale(-1, 1);
   } else {
     ctx.translate(pony.x, pony.y);
@@ -138,32 +136,18 @@ function draw() {
 
   ctx.drawImage(
     ponyImg,
-    frame * FRAME_WIDTH, 0,
-    FRAME_WIDTH, FRAME_HEIGHT,
+    frame * frameWidth, 0,
+    frameWidth, frameHeight,
     0, 0,
-    FRAME_WIDTH * SCALE,
-    FRAME_HEIGHT * SCALE
+    frameWidth * SCALE,
+    frameHeight * SCALE
   );
 
   ctx.restore();
 }
 
-/* === INPUT === */
 function press(d){ keys[d] = true; }
 function release(d){ keys[d] = false; }
-
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowUp") press("up");
-  if (e.key === "ArrowDown") press("down");
-  if (e.key === "ArrowLeft") press("left");
-  if (e.key === "ArrowRight") press("right");
-});
-document.addEventListener("keyup", e => {
-  if (e.key === "ArrowUp") release("up");
-  if (e.key === "ArrowDown") release("down");
-  if (e.key === "ArrowLeft") release("left");
-  if (e.key === "ArrowRight") release("right");
-});
 </script>
 
 </body>
