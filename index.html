@@ -14,25 +14,16 @@
       text-align: center;
     }
 
-    h1 {
-      margin: 10px 0 0;
-    }
-
-    p {
-      margin: 5px 0 10px;
-      opacity: 0.8;
-    }
-
     canvas {
       background: #3a3a3a;
-      border-radius: 10px;
+      margin: 12px auto;
       display: block;
-      margin: 0 auto;
+      border-radius: 10px;
     }
 
     .controls {
       position: fixed;
-      bottom: 16px;
+      bottom: 12px;
       left: 0;
       right: 0;
       text-align: center;
@@ -41,9 +32,9 @@
     .controls button {
       width: 64px;
       height: 64px;
-      font-size: 24px;
-      margin: 6px;
-      border-radius: 12px;
+      font-size: 22px;
+      margin: 4px;
+      border-radius: 10px;
       border: none;
       background-color: #8a5ccf;
       color: white;
@@ -69,19 +60,21 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const PONY_SIZE = 160;
+const PONY_SIZE = 128;
 
 let pony = {
-  x: (canvas.width - PONY_SIZE) / 2,
-  y: (canvas.height - PONY_SIZE) / 2
+  x: canvas.width / 2 - PONY_SIZE / 2,
+  y: canvas.height / 2 - PONY_SIZE / 2
 };
 
 let keys = { up:false, down:false, left:false, right:false };
 let facing = "right";
+let frame = 0;
+let isMoving = false;
 
-/* ===== CARGAR IMAGEN (NOMBRE EXACTO) ===== */
+/* ===== CARGAR IMAGEN ===== */
 const ponyImg = new Image();
-ponyImg.src = "pony-town--stand-padded-4x.png";
+ponyImg.src = "./pony-town-stand-padded-4x.png";
 
 ponyImg.onload = () => {
   requestAnimationFrame(update);
@@ -95,14 +88,26 @@ ponyImg.onerror = () => {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  // animación simple (rebote)
+  let bob = 0;
+  if (isMoving) {
+    bob = Math.sin(frame * 0.3) * 4;
+  }
+
   ctx.save();
 
   if (facing === "left") {
     ctx.translate(pony.x + PONY_SIZE, pony.y);
     ctx.scale(-1, 1);
-    ctx.drawImage(ponyImg, 0, 0, PONY_SIZE, PONY_SIZE);
+    ctx.drawImage(ponyImg, 0, bob, PONY_SIZE, PONY_SIZE);
   } else {
-    ctx.drawImage(ponyImg, pony.x, pony.y, PONY_SIZE, PONY_SIZE);
+    ctx.drawImage(
+      ponyImg,
+      pony.x,
+      pony.y + bob,
+      PONY_SIZE,
+      PONY_SIZE
+    );
   }
 
   ctx.restore();
@@ -110,22 +115,33 @@ function draw() {
 
 /* ===== UPDATE ===== */
 function update() {
-  const speed = 3;
+  isMoving = false;
 
-  if (keys.up) pony.y -= speed;
-  if (keys.down) pony.y += speed;
+  if (keys.up) {
+    pony.y -= 3;
+    isMoving = true;
+  }
+  if (keys.down) {
+    pony.y += 3;
+    isMoving = true;
+  }
   if (keys.left) {
-    pony.x -= speed;
+    pony.x -= 3;
     facing = "left";
+    isMoving = true;
   }
   if (keys.right) {
-    pony.x += speed;
+    pony.x += 3;
     facing = "right";
+    isMoving = true;
   }
 
   // límites
   pony.x = Math.max(0, Math.min(canvas.width - PONY_SIZE, pony.x));
   pony.y = Math.max(0, Math.min(canvas.height - PONY_SIZE, pony.y));
+
+  if (isMoving) frame++;
+  else frame = 0;
 
   draw();
   requestAnimationFrame(update);
