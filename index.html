@@ -59,9 +59,9 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const SIZE = 96;
+const SIZE = 128;        // ⬅️ más grande
 const SPEED = 3;
-const FRAME_DELAY = 6;
+const FRAME_DELAY = 3;  // ⬅️ más rápido
 
 let pony = {
   x: canvas.width / 2 - SIZE / 2,
@@ -74,7 +74,11 @@ let pony = {
 
 let keys = { up:false, down:false, left:false, right:false };
 
-// 🔹 cargar fotogramas
+// 🔹 imagen quieto
+const standImg = new Image();
+standImg.src = "pony-town--stand-acolchado-4x.png";
+
+// 🔹 cargar fotogramas de caminar
 const frames = [];
 for (let i = 0; i <= 15; i++) {
   const img = new Image();
@@ -84,15 +88,16 @@ for (let i = 0; i <= 15; i++) {
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   ctx.save();
+
+  let img = pony.moving ? frames[pony.frame] : standImg;
 
   if (pony.facing === "left") {
     ctx.translate(pony.x + SIZE, pony.y);
     ctx.scale(-1, 1);
-    ctx.drawImage(frames[pony.frame], 0, 0, SIZE, SIZE);
+    ctx.drawImage(img, 0, 0, SIZE, SIZE);
   } else {
-    ctx.drawImage(frames[pony.frame], pony.x, pony.y, SIZE, SIZE);
+    ctx.drawImage(img, pony.x, pony.y, SIZE, SIZE);
   }
 
   ctx.restore();
@@ -106,11 +111,9 @@ function update() {
   if (keys.left)  { pony.x -= SPEED; pony.facing = "left"; pony.moving = true; }
   if (keys.right) { pony.x += SPEED; pony.facing = "right"; pony.moving = true; }
 
-  // límites
   pony.x = Math.max(0, Math.min(canvas.width - SIZE, pony.x));
   pony.y = Math.max(0, Math.min(canvas.height - SIZE, pony.y));
 
-  // animación
   if (pony.moving) {
     pony.tick++;
     if (pony.tick >= FRAME_DELAY) {
@@ -118,7 +121,8 @@ function update() {
       pony.tick = 0;
     }
   } else {
-    pony.frame = 0; // quieto
+    pony.frame = 0;
+    pony.tick = 0;
   }
 
   draw();
