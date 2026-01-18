@@ -60,8 +60,9 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const SIZE = 160;      //  más grande
-const FRAME_DELAY = 2; //  animación más rápida
+const SIZE = 160;        // pony más grande
+const SPEED = 3;         // velocidad de movimiento
+const FRAME_DELAY = 2;   // animación más rápida
 
 /* ===== ESTADO ===== */
 let pony = {
@@ -73,24 +74,45 @@ let pony = {
   facing: "right"
 };
 
-let keys = { up:false, down:false, left:false, right:false };
+let keys = {
+  up: false,
+  down: false,
+  left: false,
+  right: false
+};
 
-/* ===== CARGA DE IMÁGENES ===== */
+/* ===== CARGAR FRAMES ===== */
 const frames = [];
-let imagesLoaded = 0;
 const TOTAL_FRAMES = 16;
 
 for (let i = 0; i < TOTAL_FRAMES; i++) {
   const img = new Image();
   img.src = `sprites/caminar/caminar_${i}.png`;
-  img.onload = () => {
-    imagesLoaded++;
-    if (imagesLoaded === TOTAL_FRAMES) {
-      requestAnimationFrame(update); // 🔥 arranca SOLO cuando todo cargó
-    }
-  };
   frames.push(img);
 }
+
+/* ===== CONTROLES ===== */
+function press(dir) {
+  keys[dir] = true;
+}
+
+function release(dir) {
+  keys[dir] = false;
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowUp") press("up");
+  if (e.key === "ArrowDown") press("down");
+  if (e.key === "ArrowLeft") press("left");
+  if (e.key === "ArrowRight") press("right");
+});
+
+document.addEventListener("keyup", e => {
+  if (e.key === "ArrowUp") release("up");
+  if (e.key === "ArrowDown") release("down");
+  if (e.key === "ArrowLeft") release("left");
+  if (e.key === "ArrowRight") release("right");
+});
 
 /* ===== DIBUJO ===== */
 function draw() {
@@ -109,7 +131,7 @@ function draw() {
   ctx.restore();
 }
 
-/* ===== UPDATE ===== */
+/* ===== LOOP ===== */
 function update() {
   pony.moving = false;
 
@@ -118,11 +140,9 @@ function update() {
   if (keys.left)  { pony.x -= SPEED; pony.facing = "left"; pony.moving = true; }
   if (keys.right) { pony.x += SPEED; pony.facing = "right"; pony.moving = true; }
 
-  // límites del canvas
   pony.x = Math.max(0, Math.min(canvas.width - SIZE, pony.x));
   pony.y = Math.max(0, Math.min(canvas.height - SIZE, pony.y));
 
-  // animación
   if (pony.moving) {
     pony.tick++;
     if (pony.tick >= FRAME_DELAY) {
@@ -130,30 +150,14 @@ function update() {
       pony.tick = 0;
     }
   } else {
-    pony.frame = 0; // quieto
+    pony.frame = 0; // frame quieto
   }
 
   draw();
   requestAnimationFrame(update);
 }
 
-/* ===== CONTROLES ===== */
-function press(k){ keys[k] = true; }
-function release(k){ keys[k] = false; }
-
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowUp") press("up");
-  if (e.key === "ArrowDown") press("down");
-  if (e.key === "ArrowLeft") press("left");
-  if (e.key === "ArrowRight") press("right");
-});
-
-document.addEventListener("keyup", e => {
-  if (e.key === "ArrowUp") release("up");
-  if (e.key === "ArrowDown") release("down");
-  if (e.key === "ArrowLeft") release("left");
-  if (e.key === "ArrowRight") release("right");
-});
+update();
 </script>
 
 </body>
