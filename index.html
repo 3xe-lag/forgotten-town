@@ -1,148 +1,134 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Forgotten Town</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Forgotten Town</title>
+  <style>
+    body {
+      margin: 0;
+      background: #2e2e2e;
+      overflow: hidden;
+    }
 
-<style>
-  body {
-    margin: 0;
-    background: #2b2b2b;
-    color: white;
-    font-family: Arial, sans-serif;
-    text-align: center;
-  }
-
-  canvas {
-    background: #3a3a3a;
-    margin-top: 10px;
-    border-radius: 8px;
-  }
-
-  .controls {
-    position: fixed;
-    bottom: 12px;
-    left: 0;
-    right: 0;
-    text-align: center;
-  }
-
-  .controls button {
-    width: 60px;
-    height: 60px;
-    font-size: 22px;
-    margin: 4px;
-    border-radius: 8px;
-    border: none;
-    background-color: #8a5ccf;
-    color: white;
-  }
-</style>
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #4a4a4a;
+      image-rendering: pixelated;
+    }
+  </style>
 </head>
-
 <body>
 
-<h1>🐴 Forgotten Town</h1>
-<p>Servidor personalizado inspirado en Pony Town</p>
-
-<canvas id="game" width="800" height="400"></canvas>
-
-<div class="controls">
-  <button ontouchstart="press('up')" ontouchend="release('up')">⬆️</button><br>
-  <button ontouchstart="press('left')" ontouchend="release('left')">⬅️</button>
-  <button ontouchstart="press('right')" ontouchend="release('right')">➡️</button><br>
-  <button ontouchstart="press('down')" ontouchend="release('down')">⬇️</button>
-</div>
+<canvas id="game"></canvas>
 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const SIZE = 96;
-const SPEED = 3;
-const FRAME_DELAY = 6;
+canvas.width = 360;
+canvas.height = 220;
 
-let pony = {
-  x: canvas.width / 2 - SIZE / 2,
-  y: canvas.height / 2 - SIZE / 2,
-  frame: 0,
-  tick: 0,
+// ===== CONFIG =====
+const SCALE = 1.4;           // tamaño del pony
+const FRAME_TIME = 60;       // velocidad de animación (ms)
+const TOTAL_FRAMES = 16;
+
+// ===== PLAYER =====
+const pony = {
+  x: canvas.width / 2,
+  y: canvas.height / 2,
+  speed: 1.5,
   moving: false,
-  facing: "right"
+  dir: 1 // 1 = derecha, -1 = izquierda
 };
 
-let keys = { up:false, down:false, left:false, right:false };
+// ===== INPUT =====
+const keys = {};
+window.addEventListener("keydown", e => keys[e.key] = true);
+window.addEventListener("keyup", e => keys[e.key] = false);
 
-// 🔹 cargar fotogramas
-const frames = [];
-for (let i = 0; i <= 15; i++) {
+// ===== IMÁGENES =====
+const standImg = new Image();
+standImg.src = "pony-town--stand-acolchado-4x.png";
+
+const walkFrames = [];
+for (let i = 0; i < TOTAL_FRAMES; i++) {
   const img = new Image();
   img.src = `sprites/caminar/caminar_${i}.png`;
-  frames.push(img);
+  walkFrames.push(img);
 }
 
+let frame = 0;
+let lastFrameTime = 0;
+
+// ===== UPDATE =====
+function update(delta) {
+  pony.moving = false;
+
+  if (keys["ArrowLeft"]) {
+    pony.x -= pony.speed;
+    pony.dir = -1;
+    pony.moving = true;
+  }
+  if (keys["ArrowRight"]) {
+    pony.x += pony.speed;
+    pony.dir = 1;
+    pony.moving = true;
+  }
+  if (keys["ArrowUp"]) {
+    pony.y -= pony.speed;
+    pony.moving = true;
+  }
+  if (keys["ArrowDown"]) {
+    pony.y += pony.speed;
+    pony.moving = true;
+  }
+
+  // límites
+  pony.x = Math.max(0, Math.min(canvas.width, pony.x));
+  pony.y = Math.max(0, Math.min(canvas.height, pony.y));
+
+  // animación
+  if (pony.moving && delta - lastFrameTime > FRAME_TIME) {
+    frame = (frame + 1) % TOTAL_FRAMES;
+    lastFrameTime = delta;
+  }
+
+  if (!pony.moving) frame = 0;
+}
+
+// ===== DRAW =====
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   ctx.save();
+  ctx.translate(pony.x, pony.y);
+  ctx.scale(pony.dir * SCALE, SCALE);
 
-  if (pony.facing === "left") {
-    ctx.translate(pony.x + SIZE, pony.y);
-    ctx.scale(-1, 1);
-    ctx.drawImage(frames[pony.frame], 0, 0, SIZE, SIZE);
-  } else {
-    ctx.drawImage(frames[pony.frame], pony.x, pony.y, SIZE, SIZE);
+  const img = pony.moving ? walkFrames[frame] : standImg;
+
+  if (img.complete) {
+    ctx.drawImage(
+      img,
+      -img.width / 2,
+      -img.height / 2
+    );
   }
 
   ctx.restore();
 }
 
-function update() {
-  pony.moving = false;
-
-  if (keys.up)    { pony.y -= SPEED; pony.moving = true; }
-  if (keys.down)  { pony.y += SPEED; pony.moving = true; }
-  if (keys.left)  { pony.x -= SPEED; pony.facing = "left"; pony.moving = true; }
-  if (keys.right) { pony.x += SPEED; pony.facing = "right"; pony.moving = true; }
-
-  // límites
-  pony.x = Math.max(0, Math.min(canvas.width - SIZE, pony.x));
-  pony.y = Math.max(0, Math.min(canvas.height - SIZE, pony.y));
-
-  // animación
-  if (pony.moving) {
-    pony.tick++;
-    if (pony.tick >= FRAME_DELAY) {
-      pony.frame = (pony.frame + 1) % frames.length;
-      pony.tick = 0;
-    }
-  } else {
-    pony.frame = 0; // quieto
-  }
-
+// ===== LOOP =====
+let lastTime = 0;
+function loop(time) {
+  const delta = time;
+  update(delta);
   draw();
-  requestAnimationFrame(update);
+  requestAnimationFrame(loop);
 }
 
-function press(k){ keys[k] = true; }
-function release(k){ keys[k] = false; }
-
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowUp") press("up");
-  if (e.key === "ArrowDown") press("down");
-  if (e.key === "ArrowLeft") press("left");
-  if (e.key === "ArrowRight") press("right");
-});
-
-document.addEventListener("keyup", e => {
-  if (e.key === "ArrowUp") release("up");
-  if (e.key === "ArrowDown") release("down");
-  if (e.key === "ArrowLeft") release("left");
-  if (e.key === "ArrowRight") release("right");
-});
-
-update();
+loop();
 </script>
 
 </body>
