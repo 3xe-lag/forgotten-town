@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <title>Forgotten Town</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 <style>
 html, body {
   margin: 0;
   padding: 0;
+  background: #222;
   overflow: hidden;
-  background: #000;
   touch-action: none;
 }
 
@@ -30,9 +30,9 @@ canvas {
 .controls button {
   width: 64px;
   height: 64px;
-  font-size: 24px;
+  font-size: 26px;
   margin: 4px;
-  border-radius: 12px;
+  border-radius: 10px;
   border: none;
   background: #8a5ccf;
   color: white;
@@ -52,7 +52,7 @@ canvas {
 </div>
 
 <script>
-/* ===== CANVAS ===== */
+/* ================= CANVAS ================= */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -63,7 +63,7 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 
-/* ===== CONTROLES ===== */
+/* ================= CONTROLES ================= */
 const keys = { up:false, down:false, left:false, right:false };
 function press(k){ keys[k] = true; }
 function release(k){ keys[k] = false; }
@@ -81,47 +81,37 @@ document.addEventListener("keyup", e => {
   if (e.key === "ArrowRight") release("right");
 });
 
-/* ===== MAPA ===== */
-const mapImg = new Image();
-mapImg.src = "map/map.png";
-
-const MAP_WIDTH = 2000;
-const MAP_HEIGHT = 2000;
-
-/* ===== PONY ===== */
-const SIZE = 96;
+/* ================= PONY ================= */
+const SIZE = 128;
 const SPEED = 4;
-const FRAME_DELAY = 5;
+const WALK_DELAY = 3;
 
 let pony = {
-  x: MAP_WIDTH / 2,
-  y: MAP_HEIGHT / 2,
-  facing: "right",
+  x: 200,
+  y: 200,
   frame: 0,
   tick: 0,
+  facing: "right",
   moving: false
 };
 
-/* ===== CARGA DE IMÁGENES ===== */
-let imagesToLoad = 1; // mapa
+/* ================= CARGA DE IMÁGENES ================= */
+let imagesToLoad = 0;
 let imagesLoaded = 0;
 
-function imageLoaded() {
+function onImageLoad() {
   imagesLoaded++;
   if (imagesLoaded === imagesToLoad) {
     requestAnimationFrame(update);
   }
 }
 
-/* mapa */
-mapImg.onload = imageLoaded;
-
 /* caminar */
 const walkFrames = [];
 for (let i = 0; i <= 15; i++) {
   imagesToLoad++;
   const img = new Image();
-  img.onload = imageLoaded;
+  img.onload = onImageLoad;
   img.src = `sprites/caminar/caminar_${i}.png`;
   walkFrames.push(img);
 }
@@ -131,15 +121,12 @@ const idleFrames = [];
 for (let i = 0; i <= 3; i++) {
   imagesToLoad++;
   const img = new Image();
-  img.onload = imageLoaded;
+  img.onload = onImageLoad;
   img.src = `sprites/idle/idle_${i}.png`;
   idleFrames.push(img);
 }
 
-let idleTimer = 0;
-let idleFrame = 0;
-
-/* ===== UPDATE ===== */
+/* ================= UPDATE ================= */
 function update() {
   pony.moving = false;
 
@@ -148,54 +135,36 @@ function update() {
   if (keys.left)  { pony.x -= SPEED; pony.facing = "left"; pony.moving = true; }
   if (keys.right) { pony.x += SPEED; pony.facing = "right"; pony.moving = true; }
 
-  pony.x = Math.max(0, Math.min(MAP_WIDTH, pony.x));
-  pony.y = Math.max(0, Math.min(MAP_HEIGHT, pony.y));
+  pony.x = Math.max(0, Math.min(canvas.width - SIZE, pony.x));
+  pony.y = Math.max(0, Math.min(canvas.height - SIZE, pony.y));
 
   if (pony.moving) {
     pony.tick++;
-    if (pony.tick >= FRAME_DELAY) {
+    if (pony.tick >= WALK_DELAY) {
       pony.frame = (pony.frame + 1) % walkFrames.length;
       pony.tick = 0;
     }
-    idleTimer = 0;
-    idleFrame = 0;
   } else {
-    idleTimer++;
-    if (idleTimer > 300) {
-      idleFrame = (idleFrame + 1) % idleFrames.length;
-      idleTimer = 280;
-    }
+    pony.frame = 0;
   }
 
   draw();
   requestAnimationFrame(update);
 }
 
-/* ===== DRAW ===== */
+/* ================= DRAW ================= */
 function draw() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const camX = pony.x - canvas.width / 2;
-  const camY = pony.y - canvas.height / 2;
-
-  ctx.drawImage(mapImg, -camX, -camY, MAP_WIDTH, MAP_HEIGHT);
-
-  const drawX = canvas.width / 2 - SIZE / 2;
-  const drawY = canvas.height / 2 - SIZE / 2;
+  let img = pony.moving ? walkFrames[pony.frame] : idleFrames[0];
 
   ctx.save();
   if (pony.facing === "left") {
-    ctx.translate(drawX + SIZE, drawY);
+    ctx.translate(pony.x + SIZE, pony.y);
     ctx.scale(-1, 1);
-    ctx.drawImage(
-      pony.moving ? walkFrames[pony.frame] : idleFrames[idleFrame],
-      0, 0, SIZE, SIZE
-    );
+    ctx.drawImage(img, 0, 0, SIZE, SIZE);
   } else {
-    ctx.drawImage(
-      pony.moving ? walkFrames[pony.frame] : idleFrames[idleFrame],
-      drawX, drawY, SIZE, SIZE
-    );
+    ctx.drawImage(img, pony.x, pony.y, SIZE, SIZE);
   }
   ctx.restore();
 }
