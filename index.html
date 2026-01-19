@@ -89,7 +89,7 @@ let pony = {
 
 let keys = { up:false, down:false, left:false, right:false };
 
-/* ===== CARGA SPRITES ===== */
+/* ===== SPRITES ===== */
 const walkFrames = [];
 for (let i = 0; i < 16; i++) {
   const img = new Image();
@@ -135,10 +135,27 @@ function draw() {
 function update() {
   pony.moving = false;
 
-  if (keys.up) pony.y -= SPEED;
-  if (keys.down) pony.y += SPEED;
-  if (keys.left) { pony.x -= SPEED; pony.facing = "left"; pony.moving = true; }
-  if (keys.right) { pony.x += SPEED; pony.facing = "right"; pony.moving = true; }
+  if (keys.up) {
+    pony.y -= SPEED;
+    pony.moving = true;
+  }
+
+  if (keys.down) {
+    pony.y += SPEED;
+    pony.moving = true;
+  }
+
+  if (keys.left) {
+    pony.x -= SPEED;
+    pony.facing = "left";
+    pony.moving = true;
+  }
+
+  if (keys.right) {
+    pony.x += SPEED;
+    pony.facing = "right";
+    pony.moving = true;
+  }
 
   pony.x = Math.max(0, Math.min(canvas.width - SIZE, pony.x));
   pony.y = Math.max(0, Math.min(canvas.height - SIZE, pony.y));
