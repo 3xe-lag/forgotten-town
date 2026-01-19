@@ -60,10 +60,9 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const SIZE = 160;        // tamaño del pony
-const SPEED = 6;         // velocidad de movimiento
-const FRAME_DELAY = 3;   // animación rápida
-const TOTAL_FRAMES = 16;
+const SIZE = 160;
+const SPEED = 4;
+const WALK_FRAME_DELAY = 4;
 
 /* ===== ESTADO ===== */
 let pony = {
@@ -71,36 +70,47 @@ let pony = {
   y: canvas.height / 2 - SIZE / 2,
   frame: 0,
   tick: 0,
+  idleFrame: 0,
+  idleTick: 0,
+  blinkTick: 0,
+  breathing: 0,
   moving: false,
   facing: "right"
 };
 
 let keys = { up:false, down:false, left:false, right:false };
 
-/* ===== IMÁGENES ===== */
-const idleImg = new Image();
-idleImg.src = "idle.png";
-
+/* ===== CARGA DE IMÁGENES ===== */
 const walkFrames = [];
-for (let i = 0; i < TOTAL_FRAMES; i++) {
+for (let i = 0; i < 16; i++) {
   const img = new Image();
   img.src = `sprites/caminar/caminar_${i}.png`;
   walkFrames.push(img);
 }
 
+const idleFrames = [];
+for (let i = 0; i < 3; i++) {
+  const img = new Image();
+  img.src = `sprites/idle/idle_${i}.png`;
+  idleFrames.push(img);
+}
+
 /* ===== DIBUJO ===== */
-function draw() {
+function draw(img, scale = 1) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const drawSize = SIZE * scale;
+  const dx = pony.x + (SIZE - drawSize) / 2;
+  const dy = pony.y + (SIZE - drawSize) / 2;
+
   ctx.save();
 
-  const img = pony.moving ? walkFrames[pony.frame] : idleImg;
-
   if (pony.facing === "left") {
-    ctx.translate(pony.x + SIZE, pony.y);
+    ctx.translate(dx + drawSize, dy);
     ctx.scale(-1, 1);
-    ctx.drawImage(img, 0, 0, SIZE, SIZE);
+    ctx.drawImage(img, 0, 0, drawSize, drawSize);
   } else {
-    ctx.drawImage(img, pony.x, pony.y, SIZE, SIZE);
+    ctx.drawImage(img, dx, dy, drawSize, drawSize);
   }
 
   ctx.restore();
@@ -120,15 +130,32 @@ function update() {
 
   if (pony.moving) {
     pony.tick++;
-    if (pony.tick >= FRAME_DELAY) {
+    if (pony.tick >= WALK_FRAME_DELAY) {
       pony.frame = (pony.frame + 1) % walkFrames.length;
       pony.tick = 0;
     }
+    draw(walkFrames[pony.frame], 1);
   } else {
-    pony.frame = 0;
+    /* ===== IDLE ===== */
+    pony.breathing += 0.03;
+    const breathScale = 1 + Math.sin(pony.breathing) * 0.02;
+
+    pony.blinkTick++;
+    if (pony.blinkTick > 180) {
+      pony.idleFrame = 2;
+      if (pony.blinkTick > 195) {
+        pony.idleFrame = 0;
+        pony.blinkTick = 0;
+      }
+    } else if (pony.blinkTick > 170) {
+      pony.idleFrame = 1;
+    } else {
+      pony.idleFrame = 0;
+    }
+
+    draw(idleFrames[pony.idleFrame], breathScale);
   }
 
-  draw();
   requestAnimationFrame(update);
 }
 
