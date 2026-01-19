@@ -60,9 +60,10 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const SIZE = 160;        // pony más grande
+const SIZE = 160;        // tamaño del pony
 const SPEED = 6;         // velocidad de movimiento
-const FRAME_DELAY = 2;   // animación más rápida
+const FRAME_DELAY = 3;   // animación rápida
+const TOTAL_FRAMES = 16;
 
 /* ===== ESTADO ===== */
 let pony = {
@@ -74,64 +75,38 @@ let pony = {
   facing: "right"
 };
 
-let keys = {
-  up: false,
-  down: false,
-  left: false,
-  right: false
-};
+let keys = { up:false, down:false, left:false, right:false };
 
-/* ===== CARGAR FRAMES ===== */
-const frames = [];
-const TOTAL_FRAMES = 16;
+/* ===== IMÁGENES ===== */
+const idleImg = new Image();
+idleImg.src = "idle.png";
 
+const walkFrames = [];
 for (let i = 0; i < TOTAL_FRAMES; i++) {
   const img = new Image();
   img.src = `sprites/caminar/caminar_${i}.png`;
-  frames.push(img);
+  walkFrames.push(img);
 }
-
-/* ===== CONTROLES ===== */
-function press(dir) {
-  keys[dir] = true;
-}
-
-function release(dir) {
-  keys[dir] = false;
-}
-
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowUp") press("up");
-  if (e.key === "ArrowDown") press("down");
-  if (e.key === "ArrowLeft") press("left");
-  if (e.key === "ArrowRight") press("right");
-});
-
-document.addEventListener("keyup", e => {
-  if (e.key === "ArrowUp") release("up");
-  if (e.key === "ArrowDown") release("down");
-  if (e.key === "ArrowLeft") release("left");
-  if (e.key === "ArrowRight") release("right");
-});
 
 /* ===== DIBUJO ===== */
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   ctx.save();
+
+  const img = pony.moving ? walkFrames[pony.frame] : idleImg;
 
   if (pony.facing === "left") {
     ctx.translate(pony.x + SIZE, pony.y);
     ctx.scale(-1, 1);
-    ctx.drawImage(frames[pony.frame], 0, 0, SIZE, SIZE);
+    ctx.drawImage(img, 0, 0, SIZE, SIZE);
   } else {
-    ctx.drawImage(frames[pony.frame], pony.x, pony.y, SIZE, SIZE);
+    ctx.drawImage(img, pony.x, pony.y, SIZE, SIZE);
   }
 
   ctx.restore();
 }
 
-/* ===== LOOP ===== */
+/* ===== UPDATE ===== */
 function update() {
   pony.moving = false;
 
@@ -146,16 +121,34 @@ function update() {
   if (pony.moving) {
     pony.tick++;
     if (pony.tick >= FRAME_DELAY) {
-      pony.frame = (pony.frame + 1) % TOTAL_FRAMES;
+      pony.frame = (pony.frame + 1) % walkFrames.length;
       pony.tick = 0;
     }
   } else {
-    pony.frame = 0; // frame quieto
+    pony.frame = 0;
   }
 
   draw();
   requestAnimationFrame(update);
 }
+
+/* ===== CONTROLES ===== */
+function press(k){ keys[k] = true; }
+function release(k){ keys[k] = false; }
+
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowUp") press("up");
+  if (e.key === "ArrowDown") press("down");
+  if (e.key === "ArrowLeft") press("left");
+  if (e.key === "ArrowRight") press("right");
+});
+
+document.addEventListener("keyup", e => {
+  if (e.key === "ArrowUp") release("up");
+  if (e.key === "ArrowDown") release("down");
+  if (e.key === "ArrowLeft") release("left");
+  if (e.key === "ArrowRight") release("right");
+});
 
 update();
 </script>
