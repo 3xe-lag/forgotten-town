@@ -63,6 +63,10 @@ const ctx = canvas.getContext("2d");
 const SIZE = 160;
 const SPEED = 4;
 
+/* PARPADEO */
+const BLINK_WAIT = 240;   // espera antes de parpadear (~4s)
+const BLINK_SPEED = 4;    // velocidad del parpadeo
+
 /* MAPA */
 const mapImg = new Image();
 mapImg.src = "sprites/mapa/mapa.png";
@@ -76,7 +80,9 @@ let pony = {
   facing: "right",
   moving: false,
   idleTick: 0,
-  idleFrame: 0
+  idleFrame: 0,
+  blinking: false,
+  blinkTick: 0
 };
 
 let keys = { up:false, down:false, left:false, right:false };
@@ -100,7 +106,6 @@ for (let i = 0; i < 4; i++) {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  /* MAPA */
   ctx.drawImage(mapImg, 0, 0, canvas.width, canvas.height);
 
   ctx.save();
@@ -139,12 +144,26 @@ function update() {
     }
     pony.idleTick = 0;
     pony.idleFrame = 0;
+    pony.blinking = false;
   } else {
     pony.idleTick++;
-    if (pony.idleTick > 300) {
-      pony.idleFrame++;
-      if (pony.idleFrame > 3) pony.idleFrame = 0;
-      pony.idleTick = 260;
+
+    if (!pony.blinking && pony.idleTick > BLINK_WAIT) {
+      pony.blinking = true;
+      pony.blinkTick = 0;
+      pony.idleFrame = 1;
+    }
+
+    if (pony.blinking) {
+      pony.blinkTick++;
+      if (pony.blinkTick % BLINK_SPEED === 0) {
+        pony.idleFrame++;
+        if (pony.idleFrame > 3) {
+          pony.idleFrame = 0;
+          pony.blinking = false;
+          pony.idleTick = 0;
+        }
+      }
     }
   }
 
