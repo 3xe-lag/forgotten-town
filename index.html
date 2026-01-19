@@ -8,14 +8,14 @@
 <style>
   body {
     margin: 0;
-    background: #2b2b2b;
+    background: #1e1e1e;
     color: white;
     font-family: Arial, sans-serif;
     text-align: center;
   }
 
   canvas {
-    background: #3a3a3a;
+    background: #000;
     margin-top: 10px;
     border-radius: 8px;
   }
@@ -56,35 +56,32 @@
 </div>
 
 <script>
-/* ===== CONFIG ===== */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const SIZE = 160;          // tamaño del pony
-const SPEED = 5;           // velocidad de movimiento
-const WALK_DELAY = 4;      // velocidad animación caminar
-const BLINK_WAIT = 300;    // 5 segundos (60fps)
-const BLINK_DELAY = 5;     // parpadeo rápido
+/* CONFIG */
+const SIZE = 160;
+const SPEED = 4;
 
-/* ===== ESTADO ===== */
+/* MAPA */
+const mapImg = new Image();
+mapImg.src = "sprites/mapa/mapa.png";
+
+/* ESTADO */
 let pony = {
   x: canvas.width / 2 - SIZE / 2,
   y: canvas.height / 2 - SIZE / 2,
   frame: 0,
   tick: 0,
-  moving: false,
   facing: "right",
-
-  idleFrame: 0,
+  moving: false,
   idleTick: 0,
-  idleTime: 0,
-  blinking: false,
-  blinkDir: 1
+  idleFrame: 0
 };
 
 let keys = { up:false, down:false, left:false, right:false };
 
-/* ===== CARGA DE IMÁGENES ===== */
+/* CAMINAR */
 const walkFrames = [];
 for (let i = 0; i < 16; i++) {
   const img = new Image();
@@ -92,6 +89,7 @@ for (let i = 0; i < 16; i++) {
   walkFrames.push(img);
 }
 
+/* IDLE */
 const idleFrames = [];
 for (let i = 0; i < 4; i++) {
   const img = new Image();
@@ -99,23 +97,29 @@ for (let i = 0; i < 4; i++) {
   idleFrames.push(img);
 }
 
-/* ===== DIBUJAR ===== */
-function draw(img) {
+function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.save();
 
+  /* MAPA */
+  ctx.drawImage(mapImg, 0, 0, canvas.width, canvas.height);
+
+  ctx.save();
   if (pony.facing === "left") {
     ctx.translate(pony.x + SIZE, pony.y);
     ctx.scale(-1, 1);
-    ctx.drawImage(img, 0, 0, SIZE, SIZE);
+    ctx.drawImage(
+      pony.moving ? walkFrames[pony.frame] : idleFrames[pony.idleFrame],
+      0, 0, SIZE, SIZE
+    );
   } else {
-    ctx.drawImage(img, pony.x, pony.y, SIZE, SIZE);
+    ctx.drawImage(
+      pony.moving ? walkFrames[pony.frame] : idleFrames[pony.idleFrame],
+      pony.x, pony.y, SIZE, SIZE
+    );
   }
-
   ctx.restore();
 }
 
-/* ===== LOOP ===== */
 function update() {
   pony.moving = false;
 
@@ -127,54 +131,27 @@ function update() {
   pony.x = Math.max(0, Math.min(canvas.width - SIZE, pony.x));
   pony.y = Math.max(0, Math.min(canvas.height - SIZE, pony.y));
 
-  /* ===== CAMINAR ===== */
   if (pony.moving) {
     pony.tick++;
-    if (pony.tick >= WALK_DELAY) {
+    if (pony.tick > 3) {
       pony.frame = (pony.frame + 1) % walkFrames.length;
       pony.tick = 0;
     }
-    pony.idleTime = 0;
-    pony.blinking = false;
+    pony.idleTick = 0;
     pony.idleFrame = 0;
-    draw(walkFrames[pony.frame]);
+  } else {
+    pony.idleTick++;
+    if (pony.idleTick > 300) {
+      pony.idleFrame++;
+      if (pony.idleFrame > 3) pony.idleFrame = 0;
+      pony.idleTick = 260;
+    }
   }
 
-  /* ===== IDLE + PARPADEO ===== */
-  else {
-    pony.idleTime++;
-
-    if (!pony.blinking && pony.idleTime >= BLINK_WAIT) {
-      pony.blinking = true;
-      pony.idleFrame = 0;
-      pony.blinkDir = 1;
-    }
-
-    if (pony.blinking) {
-      pony.idleTick++;
-      if (pony.idleTick >= BLINK_DELAY) {
-        pony.idleFrame += pony.blinkDir;
-        pony.idleTick = 0;
-
-        if (pony.idleFrame === idleFrames.length - 1) {
-          pony.blinkDir = -1;
-        }
-
-        if (pony.idleFrame === 0 && pony.blinkDir === -1) {
-          pony.blinking = false;
-          pony.idleTime = 0;
-          pony.blinkDir = 1;
-        }
-      }
-    }
-
-    draw(idleFrames[pony.idleFrame]);
-  }
-
+  draw();
   requestAnimationFrame(update);
 }
 
-/* ===== CONTROLES ===== */
 function press(k){ keys[k] = true; }
 function release(k){ keys[k] = false; }
 
@@ -184,7 +161,6 @@ document.addEventListener("keydown", e => {
   if (e.key === "ArrowLeft") press("left");
   if (e.key === "ArrowRight") press("right");
 });
-
 document.addEventListener("keyup", e => {
   if (e.key === "ArrowUp") release("up");
   if (e.key === "ArrowDown") release("down");
