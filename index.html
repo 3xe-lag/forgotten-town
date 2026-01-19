@@ -60,47 +60,46 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const SIZE = 150;
-const SPEED = 4;
-const WALK_DELAY = 4;
-const BLINK_DELAY = 10;
-const BLINK_WAIT = 420; // ~7 segundos (60fps)
+const SIZE = 160;          // tamaño del pony
+const SPEED = 5;           // velocidad de movimiento
+const WALK_DELAY = 4;      // velocidad animación caminar
+const BLINK_WAIT = 300;    // 5 segundos (60fps)
+const BLINK_DELAY = 5;     // parpadeo rápido
 
 /* ===== ESTADO ===== */
 let pony = {
   x: canvas.width / 2 - SIZE / 2,
   y: canvas.height / 2 - SIZE / 2,
-  facing: "right",
+  frame: 0,
+  tick: 0,
   moving: false,
-
-  walkFrame: 0,
-  walkTick: 0,
+  facing: "right",
 
   idleFrame: 0,
   idleTick: 0,
   idleTime: 0,
-  blinking: false
+  blinking: false,
+  blinkDir: 1
 };
 
 let keys = { up:false, down:false, left:false, right:false };
 
-/* ===== IMÁGENES ===== */
+/* ===== CARGA DE IMÁGENES ===== */
 const walkFrames = [];
-const idleFrames = [];
-
 for (let i = 0; i < 16; i++) {
   const img = new Image();
   img.src = `sprites/caminar/caminar_${i}.png`;
   walkFrames.push(img);
 }
 
+const idleFrames = [];
 for (let i = 0; i < 4; i++) {
   const img = new Image();
   img.src = `sprites/idle/idle_${i}.png`;
   idleFrames.push(img);
 }
 
-/* ===== DIBUJO ===== */
+/* ===== DIBUJAR ===== */
 function draw(img) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.save();
@@ -116,7 +115,7 @@ function draw(img) {
   ctx.restore();
 }
 
-/* ===== UPDATE ===== */
+/* ===== LOOP ===== */
 function update() {
   pony.moving = false;
 
@@ -130,46 +129,46 @@ function update() {
 
   /* ===== CAMINAR ===== */
   if (pony.moving) {
+    pony.tick++;
+    if (pony.tick >= WALK_DELAY) {
+      pony.frame = (pony.frame + 1) % walkFrames.length;
+      pony.tick = 0;
+    }
     pony.idleTime = 0;
     pony.blinking = false;
     pony.idleFrame = 0;
-
-    pony.walkTick++;
-    if (pony.walkTick >= WALK_DELAY) {
-      pony.walkFrame = (pony.walkFrame + 1) % walkFrames.length;
-      pony.walkTick = 0;
-    }
-
-    draw(walkFrames[pony.walkFrame]);
+    draw(walkFrames[pony.frame]);
   }
 
-  /* ===== QUIETO ===== */
+  /* ===== IDLE + PARPADEO ===== */
   else {
-    pony.walkFrame = 0;
-    pony.walkTick = 0;
     pony.idleTime++;
 
-    // esperar 7 segundos antes de parpadear
-    if (pony.idleTime >= BLINK_WAIT) {
+    if (!pony.blinking && pony.idleTime >= BLINK_WAIT) {
       pony.blinking = true;
+      pony.idleFrame = 0;
+      pony.blinkDir = 1;
     }
 
-    if (!pony.blinking) {
-      draw(idleFrames[0]);
-    } else {
+    if (pony.blinking) {
       pony.idleTick++;
       if (pony.idleTick >= BLINK_DELAY) {
-        pony.idleFrame++;
+        pony.idleFrame += pony.blinkDir;
         pony.idleTick = 0;
 
-        if (pony.idleFrame >= idleFrames.length) {
-          pony.idleFrame = 0;
+        if (pony.idleFrame === idleFrames.length - 1) {
+          pony.blinkDir = -1;
+        }
+
+        if (pony.idleFrame === 0 && pony.blinkDir === -1) {
           pony.blinking = false;
           pony.idleTime = 0;
+          pony.blinkDir = 1;
         }
       }
-      draw(idleFrames[pony.idleFrame]);
     }
+
+    draw(idleFrames[pony.idleFrame]);
   }
 
   requestAnimationFrame(update);
