@@ -9,14 +9,33 @@
 html, body {
   margin: 0;
   padding: 0;
-  width: 100%;
-  height: 100%;
   overflow: hidden;
-  background: #1f1f1f;
+  background: #1e1e1e;
 }
 
 canvas {
   display: block;
+}
+
+/* Controles táctiles */
+#controls {
+  position: fixed;
+  bottom: 16px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  z-index: 10;
+}
+
+#controls button {
+  width: 64px;
+  height: 64px;
+  font-size: 24px;
+  margin: 4px;
+  border: none;
+  border-radius: 10px;
+  background: #8a5ccf;
+  color: white;
 }
 </style>
 </head>
@@ -25,182 +44,39 @@ canvas {
 
 <canvas id="game"></canvas>
 
+<div id="controls">
+  <button ontouchstart="press('up')" ontouchend="release('up')">⬆️</button><br>
+  <button ontouchstart="press('left')" ontouchend="release('left')">⬅️</button>
+  <button ontouchstart="press('right')" ontouchend="release('right')">➡️</button><br>
+  <button ontouchstart="press('down')" ontouchend="release('down')">⬇️</button>
+</div>
+
 <script>
-/* =======================
-   CANVAS FULLSCREEN
-======================= */
+/* ===== CANVAS ===== */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-ctx.imageSmoothingEnabled = false;
 
-function resizeCanvas() {
+function resize() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 }
-window.addEventListener("resize", resizeCanvas);
-resizeCanvas();
+window.addEventListener("resize", resize);
+resize();
 
-/* =======================
-   CONFIG
-======================= */
+/* ===== MAPA ===== */
+const MAP_WIDTH = 3000;
+const MAP_HEIGHT = 2000;
+
+const mapImage = new Image();
+mapImage.src = "map.png"; // tu imagen de fondo
+
+/* ===== CONFIG ===== */
 const SIZE = 160;
 const SPEED = 4;
 
-/* PARPADEO */
-const BLINK_WAIT = 300; // 5 segundos
-const BLINK_SPEED = 3;
-
-/* MAPA (DEBE SER GRANDE) */
-const MAP_WIDTH = 2000;
-const MAP_HEIGHT = 2000;
-
-const mapImg = new Image();
-mapImg.src = "sprites/mapa/mapa.png";
-
-/* =======================
-   ESTADO
-======================= */
-let pony = {
-  x: MAP_WIDTH / 2,
-  y: MAP_HEIGHT / 2,
-  walkFrame: 0,
-  walkTick: 0,
-  idleFrame: 0,
-  idleTick: 0,
-  blinkTimer: 0,
-  blinking: false,
-  blinkDir: 1,
-  facing: "right",
-  moving: false
-};
-
-let camera = { x: 0, y: 0 };
-
+/* ===== INPUT ===== */
 let keys = { up:false, down:false, left:false, right:false };
 
-/* =======================
-   SPRITES
-======================= */
-const walkFrames = [];
-for (let i = 0; i < 16; i++) {
-  const img = new Image();
-  img.src = `sprites/caminar/caminar_${i}.png`;
-  walkFrames.push(img);
-}
-
-const idleFrames = [];
-for (let i = 0; i < 4; i++) {
-  const img = new Image();
-  img.src = `sprites/idle/idle_${i}.png`;
-  idleFrames.push(img);
-}
-
-/* =======================
-   DIBUJO
-======================= */
-function drawSprite(img, x, y) {
-  ctx.save();
-  if (pony.facing === "left") {
-    ctx.translate(x + SIZE, y);
-    ctx.scale(-1, 1);
-    ctx.drawImage(img, 0, 0, SIZE, SIZE);
-  } else {
-    ctx.drawImage(img, x, y, SIZE, SIZE);
-  }
-  ctx.restore();
-}
-
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // MAPA (con cámara)
-  ctx.drawImage(
-    mapImg,
-    camera.x, camera.y,
-    canvas.width, canvas.height,
-    0, 0,
-    canvas.width, canvas.height
-  );
-
-  // POSICIÓN EN PANTALLA
-  const drawX = pony.x - camera.x;
-  const drawY = pony.y - camera.y;
-
-  // SPRITE
-  if (pony.moving) {
-    drawSprite(walkFrames[pony.walkFrame], drawX, drawY);
-  } else {
-    drawSprite(idleFrames[pony.idleFrame], drawX, drawY);
-  }
-}
-
-/* =======================
-   UPDATE
-======================= */
-function update() {
-  pony.moving = false;
-
-  if (keys.up)    { pony.y -= SPEED; pony.moving = true; }
-  if (keys.down)  { pony.y += SPEED; pony.moving = true; }
-  if (keys.left)  { pony.x -= SPEED; pony.facing = "left"; pony.moving = true; }
-  if (keys.right) { pony.x += SPEED; pony.facing = "right"; pony.moving = true; }
-
-  // límites del mundo
-  pony.x = Math.max(0, Math.min(MAP_WIDTH - SIZE, pony.x));
-  pony.y = Math.max(0, Math.min(MAP_HEIGHT - SIZE, pony.y));
-
-  // cámara sigue al pony
-  camera.x = pony.x - canvas.width / 2;
-  camera.y = pony.y - canvas.height / 2;
-
-  camera.x = Math.max(0, Math.min(MAP_WIDTH - canvas.width, camera.x));
-  camera.y = Math.max(0, Math.min(MAP_HEIGHT - canvas.height, camera.y));
-
-  /* CAMINAR */
-  if (pony.moving) {
-    pony.walkTick++;
-    if (pony.walkTick >= 4) {
-      pony.walkFrame = (pony.walkFrame + 1) % walkFrames.length;
-      pony.walkTick = 0;
-    }
-    pony.idleFrame = 0;
-    pony.blinking = false;
-    pony.blinkTimer = 0;
-  }
-
-  /* IDLE + PARPADEO */
-  else {
-    pony.blinkTimer++;
-
-    if (!pony.blinking && pony.blinkTimer >= BLINK_WAIT) {
-      pony.blinking = true;
-      pony.blinkDir = 1;
-      pony.idleFrame = 0;
-    }
-
-    if (pony.blinking) {
-      pony.idleTick++;
-      if (pony.idleTick >= BLINK_SPEED) {
-        pony.idleFrame += pony.blinkDir;
-        pony.idleTick = 0;
-
-        if (pony.idleFrame >= 3) pony.blinkDir = -1;
-        if (pony.idleFrame <= 0) {
-          pony.idleFrame = 0;
-          pony.blinking = false;
-          pony.blinkTimer = 0;
-        }
-      }
-    }
-  }
-
-  draw();
-  requestAnimationFrame(update);
-}
-
-/* =======================
-   CONTROLES
-======================= */
 function press(k){ keys[k] = true; }
 function release(k){ keys[k] = false; }
 
@@ -218,7 +94,126 @@ document.addEventListener("keyup", e => {
   if (e.key === "ArrowRight") release("right");
 });
 
-update();
+/* ===== PONY ===== */
+let pony = {
+  x: MAP_WIDTH / 2,
+  y: MAP_HEIGHT / 2,
+  frame: 0,
+  tick: 0,
+  facing: "right",
+  moving: false,
+  idleTimer: 0,
+  idleFrame: 0,
+  blinking: false
+};
+
+/* ===== SPRITES ===== */
+const walkFrames = [];
+for (let i = 0; i < 16; i++) {
+  const img = new Image();
+  img.src = `sprites/caminar/caminar_${i}.png`;
+  walkFrames.push(img);
+}
+
+const idleFrames = [];
+for (let i = 0; i < 4; i++) {
+  const img = new Image();
+  img.src = `sprites/idle/idle_${i}.png`;
+  idleFrames.push(img);
+}
+
+/* ===== LOOP ===== */
+function update() {
+  pony.moving = false;
+
+  if (keys.up)    { pony.y -= SPEED; pony.moving = true; }
+  if (keys.down)  { pony.y += SPEED; pony.moving = true; }
+  if (keys.left)  { pony.x -= SPEED; pony.facing = "left"; pony.moving = true; }
+  if (keys.right) { pony.x += SPEED; pony.facing = "right"; pony.moving = true; }
+
+  pony.x = Math.max(0, Math.min(MAP_WIDTH, pony.x));
+  pony.y = Math.max(0, Math.min(MAP_HEIGHT, pony.y));
+
+  // Animaciones
+  if (pony.moving) {
+    pony.tick++;
+    if (pony.tick > 4) {
+      pony.frame = (pony.frame + 1) % walkFrames.length;
+      pony.tick = 0;
+    }
+    pony.idleTimer = 0;
+    pony.blinking = false;
+  } else {
+    pony.idleTimer++;
+
+    if (pony.idleTimer > 300 && !pony.blinking) { // ~5s
+      pony.blinking = true;
+      pony.idleFrame = 0;
+    }
+
+    if (pony.blinking) {
+      pony.tick++;
+      if (pony.tick > 6) {
+        pony.idleFrame++;
+        pony.tick = 0;
+
+        if (pony.idleFrame >= idleFrames.length) {
+          pony.idleFrame = 0;
+          pony.blinking = false;
+          pony.idleTimer = 0;
+        }
+      }
+    }
+  }
+}
+
+/* ===== DIBUJO ===== */
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Cámara
+  const camX = Math.min(Math.max(pony.x - canvas.width / 2, 0), MAP_WIDTH - canvas.width);
+  const camY = Math.min(Math.max(pony.y - canvas.height / 2, 0), MAP_HEIGHT - canvas.height);
+
+  // Fondo
+  if (mapImage.complete) {
+    ctx.drawImage(mapImage, -camX, -camY, MAP_WIDTH, MAP_HEIGHT);
+  } else {
+    ctx.fillStyle = "#2b2b2b";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  ctx.save();
+
+  let img;
+  if (pony.moving) {
+    img = walkFrames[pony.frame];
+  } else {
+    img = pony.blinking ? idleFrames[pony.idleFrame] : idleFrames[0];
+  }
+
+  const drawX = pony.x - camX - SIZE / 2;
+  const drawY = pony.y - camY - SIZE / 2;
+
+  if (pony.facing === "left") {
+    ctx.translate(drawX + SIZE, drawY);
+    ctx.scale(-1, 1);
+    ctx.drawImage(img, 0, 0, SIZE, SIZE);
+  } else {
+    ctx.drawImage(img, drawX, drawY, SIZE, SIZE);
+  }
+
+  ctx.restore();
+}
+
+/* ===== MAIN LOOP ===== */
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+loop();
 </script>
 
 </body>
