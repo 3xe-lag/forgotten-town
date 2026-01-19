@@ -6,37 +6,37 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: #000;
-    overflow: hidden;
-    touch-action: none;
-  }
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #000;
+  touch-action: none;
+}
 
-  canvas {
-    display: block;
-  }
+canvas {
+  display: block;
+}
 
-  .controls {
-    position: fixed;
-    bottom: 16px;
-    left: 0;
-    right: 0;
-    text-align: center;
-    z-index: 10;
-  }
+.controls {
+  position: fixed;
+  bottom: 16px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  z-index: 10;
+}
 
-  .controls button {
-    width: 64px;
-    height: 64px;
-    font-size: 24px;
-    margin: 4px;
-    border-radius: 12px;
-    border: none;
-    background: #8a5ccf;
-    color: white;
-  }
+.controls button {
+  width: 64px;
+  height: 64px;
+  font-size: 24px;
+  margin: 4px;
+  border-radius: 12px;
+  border: none;
+  background: #8a5ccf;
+  color: white;
+}
 </style>
 </head>
 
@@ -102,17 +102,36 @@ let pony = {
   moving: false
 };
 
-/* ===== SPRITES ===== */
+/* ===== CARGA DE IMÁGENES ===== */
+let imagesToLoad = 1; // mapa
+let imagesLoaded = 0;
+
+function imageLoaded() {
+  imagesLoaded++;
+  if (imagesLoaded === imagesToLoad) {
+    requestAnimationFrame(update);
+  }
+}
+
+/* mapa */
+mapImg.onload = imageLoaded;
+
+/* caminar */
 const walkFrames = [];
 for (let i = 0; i <= 15; i++) {
+  imagesToLoad++;
   const img = new Image();
+  img.onload = imageLoaded;
   img.src = `sprites/caminar/caminar_${i}.png`;
   walkFrames.push(img);
 }
 
+/* idle */
 const idleFrames = [];
 for (let i = 0; i <= 3; i++) {
+  imagesToLoad++;
   const img = new Image();
+  img.onload = imageLoaded;
   img.src = `sprites/idle/idle_${i}.png`;
   idleFrames.push(img);
 }
@@ -159,14 +178,12 @@ function draw() {
   const camX = pony.x - canvas.width / 2;
   const camY = pony.y - canvas.height / 2;
 
-  // MAPA
   ctx.drawImage(mapImg, -camX, -camY, MAP_WIDTH, MAP_HEIGHT);
 
-  // PONY
-  ctx.save();
   const drawX = canvas.width / 2 - SIZE / 2;
   const drawY = canvas.height / 2 - SIZE / 2;
 
+  ctx.save();
   if (pony.facing === "left") {
     ctx.translate(drawX + SIZE, drawY);
     ctx.scale(-1, 1);
@@ -182,9 +199,6 @@ function draw() {
   }
   ctx.restore();
 }
-
-/* ===== START ===== */
-update();
 </script>
 
 </body>
