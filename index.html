@@ -12,11 +12,9 @@ html, body {
   overflow: hidden;
   background: #222;
 }
-
 canvas {
   display: block;
 }
-
 .controls {
   position: fixed;
   bottom: 20px;
@@ -25,7 +23,6 @@ canvas {
   text-align: center;
   z-index: 10;
 }
-
 .controls button {
   width: 64px;
   height: 64px;
@@ -51,7 +48,7 @@ canvas {
 </div>
 
 <script>
-/* ================= CONFIG ================= */
+/* ================= CANVAS ================= */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -62,18 +59,20 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 
-const TILE = 64;
+/* ================= MAPA ================= */
 const MAP_WIDTH = 3000;
 const MAP_HEIGHT = 3000;
 
-const SPEED = 4;
+/* ================= CONFIG ================= */
 const SIZE = 128;
+const SPEED = 4.5;
 
 const WALK_FRAMES = 16;
 const IDLE_FRAMES = 4;
 
-const BLINK_INTERVAL = 5000; // 5 segundos
-const BLINK_SPEED = 4;
+const WALK_DELAY = 2;      // caminar rápido
+const BLINK_DELAY = 3;     // parpadeo rápido
+const BLINK_INTERVAL = 5000;
 
 /* ================= ESTADO ================= */
 let pony = {
@@ -84,13 +83,20 @@ let pony = {
   facing: "right",
   moving: false,
   blinkTimer: Date.now(),
-  blinkIndex: 0,
-  blinking: false
+  blinking: false,
+  blinkIndex: 0
 };
+
+let camera = {
+  x: 0,
+  y: 0
+};
+
+const DEADZONE = 120;
 
 let keys = { up:false, down:false, left:false, right:false };
 
-/* ================= CARGA IMÁGENES ================= */
+/* ================= IMÁGENES ================= */
 const walkFrames = [];
 for (let i = 0; i < WALK_FRAMES; i++) {
   const img = new Image();
@@ -109,19 +115,6 @@ for (let i = 0; i < IDLE_FRAMES; i++) {
 function press(k){ keys[k] = true; }
 function release(k){ keys[k] = false; }
 
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowUp") press("up");
-  if (e.key === "ArrowDown") press("down");
-  if (e.key === "ArrowLeft") press("left");
-  if (e.key === "ArrowRight") press("right");
-});
-document.addEventListener("keyup", e => {
-  if (e.key === "ArrowUp") release("up");
-  if (e.key === "ArrowDown") release("down");
-  if (e.key === "ArrowLeft") release("left");
-  if (e.key === "ArrowRight") release("right");
-});
-
 /* ================= UPDATE ================= */
 function update() {
   pony.moving = false;
@@ -134,58 +127,70 @@ function update() {
   pony.x = Math.max(0, Math.min(MAP_WIDTH - SIZE, pony.x));
   pony.y = Math.max(0, Math.min(MAP_HEIGHT - SIZE, pony.y));
 
+  /* ===== animación caminar ===== */
   if (pony.moving) {
     pony.tick++;
-    if (pony.tick > 4) {
+    if (pony.tick >= WALK_DELAY) {
       pony.frame = (pony.frame + 1) % WALK_FRAMES;
       pony.tick = 0;
     }
     pony.blinking = false;
     pony.blinkTimer = Date.now();
-  } else {
-    if (!pony.blinking && Date.now() - pony.blinkTimer > BLINK_INTERVAL) {
-      pony.blinking = true;
-      pony.blinkIndex = 0;
-    }
+  }
 
-    if (pony.blinking) {
-      pony.tick++;
-      if (pony.tick > BLINK_SPEED) {
-        pony.tick = 0;
-        pony.blinkIndex++;
-        if (pony.blinkIndex >= IDLE_FRAMES * 2 - 2) {
-          pony.blinking = false;
-          pony.blinkTimer = Date.now();
-        }
+  /* ===== parpadeo ===== */
+  if (!pony.moving && !pony.blinking && Date.now() - pony.blinkTimer > BLINK_INTERVAL) {
+    pony.blinking = true;
+    pony.blinkIndex = 0;
+    pony.tick = 0;
+  }
+
+  if (pony.blinking) {
+    pony.tick++;
+    if (pony.tick >= BLINK_DELAY) {
+      pony.tick = 0;
+      pony.blinkIndex++;
+      if (pony.blinkIndex >= 6) {
+        pony.blinking = false;
+        pony.blinkTimer = Date.now();
       }
     }
   }
 
+  updateCamera();
   draw();
   requestAnimationFrame(update);
+}
+
+/* ================= CÁMARA ================= */
+function updateCamera() {
+  const targetX = pony.x - canvas.width / 2 + SIZE / 2;
+  const targetY = pony.y - canvas.height / 2 + SIZE / 2;
+
+  camera.x += (targetX - camera.x) * 0.08;
+  camera.y += (targetY - camera.y) * 0.08;
+
+  camera.x = Math.max(0, Math.min(MAP_WIDTH - canvas.width, camera.x));
+  camera.y = Math.max(0, Math.min(MAP_HEIGHT - canvas.height, camera.y));
 }
 
 /* ================= DRAW ================= */
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const camX = pony.x - canvas.width / 2 + SIZE / 2;
-  const camY = pony.y - canvas.height / 2 + SIZE / 2;
-
   ctx.save();
-  ctx.translate(-camX, -camY);
+  ctx.translate(-camera.x, -camera.y);
 
-  // fondo simple (placeholder mapa)
+  // fondo simple
   ctx.fillStyle = "#333";
   ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
 
-  // sprite actual
   let img;
   if (pony.moving) {
     img = walkFrames[pony.frame];
   } else if (pony.blinking) {
     const seq = [0,1,2,3,2,1];
-    img = idleFrames[seq[pony.blinkIndex] || 0];
+    img = idleFrames[seq[pony.blinkIndex]];
   } else {
     img = idleFrames[0];
   }
