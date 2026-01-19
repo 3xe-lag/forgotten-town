@@ -62,41 +62,45 @@ const ctx = canvas.getContext("2d");
 
 const SIZE = 150;
 const SPEED = 4;
-const WALK_FRAME_DELAY = 4;
-const IDLE_FRAME_DELAY = 30;
+const WALK_DELAY = 4;
+const BLINK_DELAY = 10;
+const BLINK_WAIT = 420; // ~7 segundos (60fps)
 
 /* ===== ESTADO ===== */
 let pony = {
   x: canvas.width / 2 - SIZE / 2,
   y: canvas.height / 2 - SIZE / 2,
-  frame: 0,
-  tick: 0,
-  idleTick: 0,
+  facing: "right",
   moving: false,
-  facing: "right"
+
+  walkFrame: 0,
+  walkTick: 0,
+
+  idleFrame: 0,
+  idleTick: 0,
+  idleTime: 0,
+  blinking: false
 };
 
 let keys = { up:false, down:false, left:false, right:false };
 
-/* ===== CARGA DE IMÁGENES ===== */
+/* ===== IMÁGENES ===== */
 const walkFrames = [];
 const idleFrames = [];
 
-// caminar (16)
 for (let i = 0; i < 16; i++) {
   const img = new Image();
   img.src = `sprites/caminar/caminar_${i}.png`;
   walkFrames.push(img);
 }
 
-// idle / parpadeo (4)
 for (let i = 0; i < 4; i++) {
   const img = new Image();
   img.src = `sprites/idle/idle_${i}.png`;
   idleFrames.push(img);
 }
 
-/* ===== DIBUJAR ===== */
+/* ===== DIBUJO ===== */
 function draw(img) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.save();
@@ -124,20 +128,48 @@ function update() {
   pony.x = Math.max(0, Math.min(canvas.width - SIZE, pony.x));
   pony.y = Math.max(0, Math.min(canvas.height - SIZE, pony.y));
 
+  /* ===== CAMINAR ===== */
   if (pony.moving) {
-    pony.tick++;
-    if (pony.tick >= WALK_FRAME_DELAY) {
-      pony.frame = (pony.frame + 1) % walkFrames.length;
-      pony.tick = 0;
+    pony.idleTime = 0;
+    pony.blinking = false;
+    pony.idleFrame = 0;
+
+    pony.walkTick++;
+    if (pony.walkTick >= WALK_DELAY) {
+      pony.walkFrame = (pony.walkFrame + 1) % walkFrames.length;
+      pony.walkTick = 0;
     }
-    draw(walkFrames[pony.frame]);
-  } else {
-    pony.idleTick++;
-    if (pony.idleTick >= IDLE_FRAME_DELAY) {
-      pony.frame = (pony.frame + 1) % idleFrames.length;
-      pony.idleTick = 0;
+
+    draw(walkFrames[pony.walkFrame]);
+  }
+
+  /* ===== QUIETO ===== */
+  else {
+    pony.walkFrame = 0;
+    pony.walkTick = 0;
+    pony.idleTime++;
+
+    // esperar 7 segundos antes de parpadear
+    if (pony.idleTime >= BLINK_WAIT) {
+      pony.blinking = true;
     }
-    draw(idleFrames[pony.frame]);
+
+    if (!pony.blinking) {
+      draw(idleFrames[0]);
+    } else {
+      pony.idleTick++;
+      if (pony.idleTick >= BLINK_DELAY) {
+        pony.idleFrame++;
+        pony.idleTick = 0;
+
+        if (pony.idleFrame >= idleFrames.length) {
+          pony.idleFrame = 0;
+          pony.blinking = false;
+          pony.idleTime = 0;
+        }
+      }
+      draw(idleFrames[pony.idleFrame]);
+    }
   }
 
   requestAnimationFrame(update);
