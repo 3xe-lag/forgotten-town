@@ -24,7 +24,6 @@ canvas {
   left: 0;
   right: 0;
   text-align: center;
-  z-index: 10;
 }
 
 .controls button {
@@ -146,7 +145,7 @@ function update() {
   pony.x = Math.max(0, Math.min(canvas.width - SIZE, pony.x));
   pony.y = Math.max(0, Math.min(canvas.height - SIZE, pony.y));
 
-  /* 🚶 caminar */
+  // 🚶 caminar
   if (pony.moving) {
     pony.tick++;
     if (pony.tick >= WALK_DELAY) {
@@ -157,7 +156,7 @@ function update() {
     pony.blinkIndex = 0;
     pony.blinkTimer = Date.now();
   }
-  /* 😌 idle + parpadeo */
+  // 😌 idle + parpadeo
   else {
     if (!pony.blinking && Date.now() - pony.blinkTimer > BLINK_INTERVAL) {
       pony.blinking = true;
@@ -201,26 +200,12 @@ function draw() {
 
   ctx.save();
 
-  // dibujar pony
   if (pony.facing === "left") {
     ctx.translate(pony.x + SIZE, pony.y);
     ctx.scale(-1, 1);
     ctx.drawImage(img, 0, 0, SIZE, SIZE);
   } else {
     ctx.drawImage(img, pony.x, pony.y, SIZE, SIZE);
-  }
-
-  // 🩷 pink ponk
-  if (pony.blinking) {
-    ctx.globalAlpha = 0.25;
-    ctx.fillStyle = "#ff8ad8";
-    ctx.fillRect(
-      pony.facing === "left" ? 0 : pony.x,
-      pony.y,
-      SIZE,
-      SIZE
-    );
-    ctx.globalAlpha = 1;
   }
 
   ctx.restore();
