@@ -81,18 +81,26 @@ document.addEventListener("keyup", e => {
   if (e.key === "ArrowRight") release("right");
 });
 
-/* ================= PONY ================= */
+/* ================= CONFIG ================= */
 const SIZE = 128;
 const SPEED = 4;
 const WALK_DELAY = 3;
+const BLINK_INTERVAL = 5000; // 5 segundos
+const BLINK_DELAY = 2;
 
+/* ================= ESTADO PONY ================= */
 let pony = {
   x: 200,
   y: 200,
   frame: 0,
   tick: 0,
   facing: "right",
-  moving: false
+  moving: false,
+
+  // parpadeo
+  blinking: false,
+  blinkIndex: 0,
+  blinkTimer: Date.now()
 };
 
 /* ================= CARGA DE IMÁGENES ================= */
@@ -138,13 +146,38 @@ function update() {
   pony.x = Math.max(0, Math.min(canvas.width - SIZE, pony.x));
   pony.y = Math.max(0, Math.min(canvas.height - SIZE, pony.y));
 
+  /* 🚶 caminar */
   if (pony.moving) {
     pony.tick++;
     if (pony.tick >= WALK_DELAY) {
       pony.frame = (pony.frame + 1) % walkFrames.length;
       pony.tick = 0;
     }
-  } else {
+    pony.blinking = false;
+    pony.blinkIndex = 0;
+    pony.blinkTimer = Date.now();
+  }
+  /* 😌 idle + parpadeo */
+  else {
+    if (!pony.blinking && Date.now() - pony.blinkTimer > BLINK_INTERVAL) {
+      pony.blinking = true;
+      pony.blinkIndex = 0;
+      pony.tick = 0;
+    }
+
+    if (pony.blinking) {
+      pony.tick++;
+      if (pony.tick >= BLINK_DELAY) {
+        pony.tick = 0;
+        pony.blinkIndex++;
+        if (pony.blinkIndex >= 6) {
+          pony.blinking = false;
+          pony.blinkIndex = 0;
+          pony.blinkTimer = Date.now();
+        }
+      }
+    }
+
     pony.frame = 0;
   }
 
@@ -177,10 +210,10 @@ function draw() {
     ctx.drawImage(img, pony.x, pony.y, SIZE, SIZE);
   }
 
-  // 🩷 EFECTO PINK PONK (solo al parpadear)
+  // 🩷 pink ponk
   if (pony.blinking) {
-    ctx.globalAlpha = 0.25; // transparencia
-    ctx.fillStyle = "#ff8ad8"; // rosado
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = "#ff8ad8";
     ctx.fillRect(
       pony.facing === "left" ? 0 : pony.x,
       pony.y,
