@@ -156,9 +156,19 @@ function update() {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  let img = pony.moving ? walkFrames[pony.frame] : idleFrames[0];
+  let img;
+  if (pony.moving) {
+    img = walkFrames[pony.frame];
+  } else if (pony.blinking) {
+    const seq = [0,1,2,3,2,1];
+    img = idleFrames[seq[pony.blinkIndex]];
+  } else {
+    img = idleFrames[0];
+  }
 
   ctx.save();
+
+  // dibujar pony
   if (pony.facing === "left") {
     ctx.translate(pony.x + SIZE, pony.y);
     ctx.scale(-1, 1);
@@ -166,6 +176,20 @@ function draw() {
   } else {
     ctx.drawImage(img, pony.x, pony.y, SIZE, SIZE);
   }
+
+  // 🩷 EFECTO PINK PONK (solo al parpadear)
+  if (pony.blinking) {
+    ctx.globalAlpha = 0.25; // transparencia
+    ctx.fillStyle = "#ff8ad8"; // rosado
+    ctx.fillRect(
+      pony.facing === "left" ? 0 : pony.x,
+      pony.y,
+      SIZE,
+      SIZE
+    );
+    ctx.globalAlpha = 1;
+  }
+
   ctx.restore();
 }
 </script>
