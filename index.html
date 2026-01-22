@@ -175,11 +175,14 @@ function update(){
     pony.frame=0;
   }
 
-  // Glitch sigue cerca
-  glitch.x = pony.x + (pony.facing==="right"?160:-160);
-  glitch.y = pony.y + 30;
-  glitch.facing = pony.facing==="right"?"left":"right";
+// Glitch sigue con suavidad (no pegado)
+const targetX = pony.x + (pony.facing === "right" ? 160 : -160);
+const targetY = pony.y + 30;
 
+glitch.x += (targetX - glitch.x) * 0.05;
+glitch.y += (targetY - glitch.y) * 0.05;
+
+glitch.facing = glitch.x < pony.x ? "right" : "left";
   draw();
   requestAnimationFrame(update);
 }
