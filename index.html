@@ -13,10 +13,7 @@ html, body {
   overflow: hidden;
   touch-action: none;
 }
-
-canvas {
-  display: block;
-}
+canvas { display:block; }
 
 .controls {
   position: fixed;
@@ -24,8 +21,8 @@ canvas {
   left: 0;
   right: 0;
   text-align: center;
+  z-index: 10;
 }
-
 .controls button {
   width: 64px;
   height: 64px;
@@ -51,166 +48,179 @@ canvas {
 </div>
 
 <script>
-/* ================= CANVAS ================= */
+/* ===== CANVAS ===== */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-
-function resize() {
+function resize(){
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 }
 window.addEventListener("resize", resize);
 resize();
 
-/* ================= CONTROLES ================= */
+/* ===== CONTROLES ===== */
 const keys = { up:false, down:false, left:false, right:false };
-function press(k){ keys[k] = true; }
-function release(k){ keys[k] = false; }
+function press(k){ keys[k]=true; }
+function release(k){ keys[k]=false; }
 
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowUp") press("up");
-  if (e.key === "ArrowDown") press("down");
-  if (e.key === "ArrowLeft") press("left");
-  if (e.key === "ArrowRight") press("right");
+document.addEventListener("keydown", e=>{
+  if(e.key==="ArrowUp")press("up");
+  if(e.key==="ArrowDown")press("down");
+  if(e.key==="ArrowLeft")press("left");
+  if(e.key==="ArrowRight")press("right");
 });
-document.addEventListener("keyup", e => {
-  if (e.key === "ArrowUp") release("up");
-  if (e.key === "ArrowDown") release("down");
-  if (e.key === "ArrowLeft") release("left");
-  if (e.key === "ArrowRight") release("right");
+document.addEventListener("keyup", e=>{
+  if(e.key==="ArrowUp")release("up");
+  if(e.key==="ArrowDown")release("down");
+  if(e.key==="ArrowLeft")release("left");
+  if(e.key==="ArrowRight")release("right");
 });
 
-/* ================= CONFIG ================= */
+/* ===== CONFIG ===== */
 const SIZE = 128;
 const SPEED = 4;
 const WALK_DELAY = 3;
-const BLINK_INTERVAL = 5000; // 5 segundos
+const BLINK_INTERVAL = 5000;
 const BLINK_DELAY = 2;
 
-/* ================= ESTADO PONY ================= */
+/* ===== JUGADOR ===== */
 let pony = {
-  x: 200,
-  y: 200,
-  frame: 0,
-  tick: 0,
+  x: 200, y: 200,
+  frame: 0, tick: 0,
   facing: "right",
   moving: false,
-
-  // parpadeo
-  blinking: false,
-  blinkIndex: 0,
-  blinkTimer: Date.now()
+  blinking:false,
+  blinkIndex:0,
+  blinkTimer:Date.now()
 };
 
-/* ================= CARGA DE IMÁGENES ================= */
-let imagesToLoad = 0;
-let imagesLoaded = 0;
+/* ===== GLITCH NPC ===== */
+let glitch = {
+  x: pony.x + 160,
+  y: pony.y + 30,
+  facing: "left"
+};
 
-function onImageLoad() {
+/* ===== CARGA DE IMÁGENES ===== */
+let imagesToLoad = 0, imagesLoaded = 0;
+function onImageLoad(){
   imagesLoaded++;
-  if (imagesLoaded === imagesToLoad) {
+  if(imagesLoaded===imagesToLoad){
     requestAnimationFrame(update);
   }
 }
 
 /* caminar */
-const walkFrames = [];
-for (let i = 0; i <= 15; i++) {
+const walkFrames=[];
+for(let i=0;i<=15;i++){
   imagesToLoad++;
-  const img = new Image();
-  img.onload = onImageLoad;
-  img.src = `sprites/caminar/caminar_${i}.png`;
+  const img=new Image();
+  img.onload=onImageLoad;
+  img.src=`sprites/caminar/caminar_${i}.png`;
   walkFrames.push(img);
 }
 
 /* idle */
-const idleFrames = [];
-for (let i = 0; i <= 3; i++) {
+const idleFrames=[];
+for(let i=0;i<=3;i++){
   imagesToLoad++;
-  const img = new Image();
-  img.onload = onImageLoad;
-  img.src = `sprites/idle/idle_${i}.png`;
+  const img=new Image();
+  img.onload=onImageLoad;
+  img.src=`sprites/idle/idle_${i}.png`;
   idleFrames.push(img);
 }
 
-/* ================= UPDATE ================= */
-function update() {
-  pony.moving = false;
+/* ===== UPDATE ===== */
+function update(){
+  pony.moving=false;
 
-  if (keys.up)    { pony.y -= SPEED; pony.moving = true; }
-  if (keys.down)  { pony.y += SPEED; pony.moving = true; }
-  if (keys.left)  { pony.x -= SPEED; pony.facing = "left"; pony.moving = true; }
-  if (keys.right) { pony.x += SPEED; pony.facing = "right"; pony.moving = true; }
+  if(keys.up){pony.y-=SPEED;pony.moving=true;}
+  if(keys.down){pony.y+=SPEED;pony.moving=true;}
+  if(keys.left){pony.x-=SPEED;pony.facing="left";pony.moving=true;}
+  if(keys.right){pony.x+=SPEED;pony.facing="right";pony.moving=true;}
 
-  pony.x = Math.max(0, Math.min(canvas.width - SIZE, pony.x));
-  pony.y = Math.max(0, Math.min(canvas.height - SIZE, pony.y));
+  pony.x=Math.max(0,Math.min(canvas.width-SIZE,pony.x));
+  pony.y=Math.max(0,Math.min(canvas.height-SIZE,pony.y));
 
-  // 🚶 caminar
-  if (pony.moving) {
+  // anim caminar
+  if(pony.moving){
     pony.tick++;
-    if (pony.tick >= WALK_DELAY) {
-      pony.frame = (pony.frame + 1) % walkFrames.length;
-      pony.tick = 0;
+    if(pony.tick>=WALK_DELAY){
+      pony.frame=(pony.frame+1)%walkFrames.length;
+      pony.tick=0;
     }
-    pony.blinking = false;
-    pony.blinkIndex = 0;
-    pony.blinkTimer = Date.now();
+    pony.blinking=false;
+    pony.blinkIndex=0;
+    pony.blinkTimer=Date.now();
   }
-  // 😌 idle + parpadeo
-  else {
-    if (!pony.blinking && Date.now() - pony.blinkTimer > BLINK_INTERVAL) {
-      pony.blinking = true;
-      pony.blinkIndex = 0;
-      pony.tick = 0;
+  // idle + blink
+  else{
+    if(!pony.blinking && Date.now()-pony.blinkTimer>BLINK_INTERVAL){
+      pony.blinking=true;
+      pony.blinkIndex=0;
+      pony.tick=0;
     }
-
-    if (pony.blinking) {
+    if(pony.blinking){
       pony.tick++;
-      if (pony.tick >= BLINK_DELAY) {
-        pony.tick = 0;
+      if(pony.tick>=BLINK_DELAY){
+        pony.tick=0;
         pony.blinkIndex++;
-        if (pony.blinkIndex >= 6) {
-          pony.blinking = false;
-          pony.blinkIndex = 0;
-          pony.blinkTimer = Date.now();
+        if(pony.blinkIndex>=6){
+          pony.blinking=false;
+          pony.blinkIndex=0;
+          pony.blinkTimer=Date.now();
         }
       }
     }
-
-    pony.frame = 0;
+    pony.frame=0;
   }
+
+  // Glitch sigue cerca
+  glitch.x = pony.x + (pony.facing==="right"?160:-160);
+  glitch.y = pony.y + 30;
+  glitch.facing = pony.facing==="right"?"left":"right";
 
   draw();
   requestAnimationFrame(update);
 }
 
-/* ================= DRAW ================= */
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+/* ===== DRAW ===== */
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
+  // GLITCH
+  let gImg = idleFrames[0];
+  ctx.save();
+  if(glitch.facing==="left"){
+    ctx.translate(glitch.x+SIZE,glitch.y);
+    ctx.scale(-1,1);
+    ctx.drawImage(gImg,0,0,SIZE,SIZE);
+  }else{
+    ctx.drawImage(gImg,glitch.x,glitch.y,SIZE,SIZE);
+  }
+  ctx.restore();
+
+  // JUGADOR
   let img;
-  if (pony.moving) {
+  if(pony.moving){
     img = walkFrames[pony.frame];
-  } else if (pony.blinking) {
-    const seq = [0,1,2,3,2,1];
+  }else if(pony.blinking){
+    const seq=[0,1,2,3,2,1];
     img = idleFrames[seq[pony.blinkIndex]];
-  } else {
+  }else{
     img = idleFrames[0];
   }
 
   ctx.save();
-
-  if (pony.facing === "left") {
-    ctx.translate(pony.x + SIZE, pony.y);
-    ctx.scale(-1, 1);
-    ctx.drawImage(img, 0, 0, SIZE, SIZE);
-  } else {
-    ctx.drawImage(img, pony.x, pony.y, SIZE, SIZE);
+  if(pony.facing==="left"){
+    ctx.translate(pony.x+SIZE,pony.y);
+    ctx.scale(-1,1);
+    ctx.drawImage(img,0,0,SIZE,SIZE);
+  }else{
+    ctx.drawImage(img,pony.x,pony.y,SIZE,SIZE);
   }
-
   ctx.restore();
 }
 </script>
-
 </body>
 </html>
