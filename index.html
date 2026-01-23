@@ -83,19 +83,17 @@ const SPEED = 4;
 const WALK_DELAY = 3;
 const BLINK_INTERVAL = 5000;
 const BLINK_DELAY = 2;
+const WORLD_W = 3000;
+const WORLD_H = 3000;
 
 /* ===== CÁMARA + ZOOM ===== */
 let camera = { x: 0, y: 0 };
 let zoom = 1;
-const MIN_ZOOM = 0.5;
-const MAX_ZOOM = 2;
 
 /* ===== JUGADOR ===== */
 let pony = {
-  x: canvas.width/2 - SIZE/2,
-  y: canvas.height/2 - SIZE/2,
-  frame: 0,
-  tick: 0,
+  x: 400, y: 400,
+  frame: 0, tick: 0,
   facing: "right",
   moving: false,
   blinking:false,
@@ -103,21 +101,12 @@ let pony = {
   blinkTimer:Date.now()
 };
 
-/* ===== GLITCH NPC ===== */
-let glitch = {
-  x: canvas.width/2 + 140,
-  y: canvas.height/2,
-  facing: "left"
-};
+/* ===== GLITCH ===== */
+let glitch = { x: 650, y: 420 };
+let lookTarget = 0;
+let lookTimer = 0;
 
-/* ===== ZOOM ===== */
-canvas.addEventListener("wheel", e=>{
-  e.preventDefault();
-  zoom += e.deltaY * -0.001;
-  zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
-});
-
-/* ===== CARGA IMÁGENES ===== */
+/* ===== IMÁGENES ===== */
 let imagesToLoad=0, imagesLoaded=0;
 function onImageLoad(){
   imagesLoaded++;
@@ -144,6 +133,15 @@ for(let i=0;i<=3;i++){
   idleFrames.push(img);
 }
 
+const glitchLooks=[];
+for(let i=0;i<=8;i++){
+  imagesToLoad++;
+  const img=new Image();
+  img.onload=onImageLoad;
+  img.src=`sprites/glitch_look/look_${i}.png`;
+  glitchLooks.push(img);
+}
+
 /* ===== UPDATE ===== */
 function update(){
   pony.moving=false;
@@ -153,12 +151,13 @@ function update(){
   if(keys.left){pony.x-=SPEED;pony.facing="left";pony.moving=true;}
   if(keys.right){pony.x+=SPEED;pony.facing="right";pony.moving=true;}
 
-  pony.x = Math.max(0, Math.min(canvas.width - SIZE, pony.x));
-  pony.y = Math.max(0, Math.min(canvas.height - SIZE, pony.y));
+  pony.x = Math.max(0, Math.min(WORLD_W - SIZE, pony.x));
+  pony.y = Math.max(0, Math.min(WORLD_H - SIZE, pony.y));
 
-  camera.x = pony.x - canvas.width/(2*zoom) + SIZE/2;
-  camera.y = pony.y - canvas.height/(2*zoom) + SIZE/2;
+  camera.x = pony.x - canvas.width/2 + SIZE/2;
+  camera.y = pony.y - canvas.height/2 + SIZE/2;
 
+  // caminar
   if(pony.moving){
     pony.tick++;
     if(pony.tick>=WALK_DELAY){
@@ -189,22 +188,42 @@ function update(){
     pony.frame=0;
   }
 
+  // 👁️ GLITCH mira
+  const dx = pony.x - glitch.x;
+  const dy = pony.y - glitch.y;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+
+  lookTimer++;
+
+  if(dist < 180 && Math.random() < 0.03){
+    lookTarget = dx < 0 ? 1 : 2;
+    lookTimer = 0;
+  }
+
+  if(lookTimer > 180){
+    lookTarget = 0;
+  }
+
   draw();
   requestAnimationFrame(update);
 }
 
 /* ===== DRAW ===== */
 function draw(){
-  ctx.setTransform(zoom,0,0,zoom,0,0);
-  ctx.clearRect(0,0,canvas.width/zoom,canvas.height/zoom);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
   const px = pony.x - camera.x;
   const py = pony.y - camera.y;
   const gx = glitch.x - camera.x;
   const gy = glitch.y - camera.y;
 
-  ctx.drawImage(idleFrames[0], gx, gy, SIZE, SIZE);
+  // GLITCH
+  let gImg = glitchLooks[0];
+  if(lookTarget===1) gImg = glitchLooks[1];
+  if(lookTarget===2) gImg = glitchLooks[2];
+  ctx.drawImage(gImg, gx, gy, SIZE, SIZE);
 
+  // JUGADOR
   let img;
   if(pony.moving){
     img = walkFrames[pony.frame];
@@ -224,8 +243,6 @@ function draw(){
     ctx.drawImage(img,px,py,SIZE,SIZE);
   }
   ctx.restore();
-
-  ctx.setTransform(1,0,0,1,0,0);
 }
 </script>
 
