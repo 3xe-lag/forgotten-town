@@ -48,6 +48,7 @@ canvas { display:block; }
 </div>
 
 <script>
+/* ===== CANVAS ===== */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -63,42 +64,53 @@ const keys = { up:false, down:false, left:false, right:false };
 function press(k){ keys[k]=true; }
 function release(k){ keys[k]=false; }
 
+document.addEventListener("keydown", e=>{
+  if(e.key==="ArrowUp")press("up");
+  if(e.key==="ArrowDown")press("down");
+  if(e.key==="ArrowLeft")press("left");
+  if(e.key==="ArrowRight")press("right");
+});
+document.addEventListener("keyup", e=>{
+  if(e.key==="ArrowUp")release("up");
+  if(e.key==="ArrowDown")release("down");
+  if(e.key==="ArrowLeft")release("left");
+  if(e.key==="ArrowRight")release("right");
+});
+
 /* ===== CONFIG ===== */
 const SIZE = 128;
 const SPEED = 4;
 const WALK_DELAY = 3;
-const BLINK_INTERVAL = 5000;
-const BLINK_DELAY = 2;
-
-/* ===== CÁMARA ===== */
-let camera = { x: 0, y: 0 };
-let zoom = 1;
 
 /* ===== JUGADOR ===== */
 let pony = {
-  x: 500, y: 500,
+  x: 400, y: 300,
   frame: 0, tick: 0,
   facing: "right",
-  moving: false,
-  blinking:false,
-  blinkIndex:0,
-  blinkTimer:Date.now()
+  moving: false
 };
 
 /* ===== GLITCH ===== */
-let glitch = { x: 650, y: 500 };
+let glitch = {
+  x: 650,
+  y: 300,
+  lookIndex: 0,
+  looking: false,
+  lookTimer: 0,
+  cooldown: 0
+};
 
 /* ===== CARGA ===== */
-let imagesToLoad=0, imagesLoaded=0;
+let imagesToLoad = 0, imagesLoaded = 0;
 function onImageLoad(){
   imagesLoaded++;
-  if(imagesLoaded===imagesToLoad){
+  if(imagesLoaded === imagesToLoad){
     requestAnimationFrame(update);
   }
 }
 
-const walkFrames=[], idleFrames=[];
-
+/* caminar */
+const walkFrames=[];
 for(let i=0;i<=15;i++){
   imagesToLoad++;
   const img=new Image();
@@ -106,12 +118,25 @@ for(let i=0;i<=15;i++){
   img.src=`sprites/caminar/caminar_${i}.png`;
   walkFrames.push(img);
 }
+
+/* idle */
+const idleFrames=[];
 for(let i=0;i<=3;i++){
   imagesToLoad++;
   const img=new Image();
   img.onload=onImageLoad;
   img.src=`sprites/idle/idle_${i}.png`;
   idleFrames.push(img);
+}
+
+/* GLITCH LOOK */
+const glitchLook=[];
+for(let i=0;i<=8;i++){
+  imagesToLoad++;
+  const img=new Image();
+  img.onload=onImageLoad;
+  img.src=`https://raw.githubusercontent.com/3xe-lag/forgotten-town/main/sprites/glitch_look/look_${i}.png`;
+  glitchLook.push(img);
 }
 
 /* ===== UPDATE ===== */
@@ -123,37 +148,45 @@ function update(){
   if(keys.left){pony.x-=SPEED;pony.facing="left";pony.moving=true;}
   if(keys.right){pony.x+=SPEED;pony.facing="right";pony.moving=true;}
 
-  camera.x = pony.x - canvas.width/2 + SIZE/2;
-  camera.y = pony.y - canvas.height/2 + SIZE/2;
-
+  // caminar
   if(pony.moving){
     pony.tick++;
     if(pony.tick>=WALK_DELAY){
       pony.frame=(pony.frame+1)%walkFrames.length;
       pony.tick=0;
     }
-    pony.blinking=false;
-    pony.blinkIndex=0;
-    pony.blinkTimer=Date.now();
   } else {
-    if(!pony.blinking && Date.now()-pony.blinkTimer>BLINK_INTERVAL){
-      pony.blinking=true;
-      pony.blinkIndex=0;
-      pony.tick=0;
-    }
-    if(pony.blinking){
-      pony.tick++;
-      if(pony.tick>=BLINK_DELAY){
-        pony.tick=0;
-        pony.blinkIndex++;
-        if(pony.blinkIndex>=6){
-          pony.blinking=false;
-          pony.blinkIndex=0;
-          pony.blinkTimer=Date.now();
-        }
-      }
-    }
     pony.frame=0;
+  }
+
+  // distancia a Glitch
+  const dx = pony.x - glitch.x;
+  const dy = pony.y - glitch.y;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+
+  if(glitch.cooldown > 0) glitch.cooldown--;
+
+  if(dist < 200 && !glitch.looking && glitch.cooldown <= 0){
+    if(Math.random() < 0.02){
+      glitch.looking = true;
+      glitch.lookTimer = 180;
+    }
+  }
+
+  if(glitch.looking){
+    glitch.lookTimer--;
+
+    if(Math.abs(dx) > Math.abs(dy)){
+      glitch.lookIndex = dx > 0 ? 2 : 1;
+    } else {
+      glitch.lookIndex = dy > 0 ? 4 : 3;
+    }
+
+    if(glitch.lookTimer <= 0){
+      glitch.looking = false;
+      glitch.lookIndex = 0;
+      glitch.cooldown = 300;
+    }
   }
 
   draw();
@@ -162,39 +195,25 @@ function update(){
 
 /* ===== DRAW ===== */
 function draw(){
-  ctx.setTransform(1,0,0,1,0,0);
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  ctx.save();
-  ctx.scale(zoom, zoom);
-  ctx.translate(-camera.x, -camera.y);
-
   // GLITCH
-  ctx.drawImage(idleFrames[0], glitch.x, glitch.y, SIZE, SIZE);
+  ctx.drawImage(glitchLook[glitch.lookIndex], glitch.x, glitch.y, SIZE, SIZE);
 
-  // PLAYER
-  let img;
-  if(pony.moving){
-    img = walkFrames[pony.frame];
-  }else if(pony.blinking){
-    const seq=[0,1,2,3,2,1];
-    img = idleFrames[seq[pony.blinkIndex]];
-  }else{
-    img = idleFrames[0];
-  }
+  // JUGADOR
+  let img = pony.moving ? walkFrames[pony.frame] : idleFrames[0];
 
+  ctx.save();
   if(pony.facing==="left"){
-    ctx.save();
-    ctx.translate(pony.x+SIZE, pony.y);
+    ctx.translate(pony.x+SIZE,pony.y);
     ctx.scale(-1,1);
     ctx.drawImage(img,0,0,SIZE,SIZE);
-    ctx.restore();
   }else{
-    ctx.drawImage(img, pony.x, pony.y, SIZE, SIZE);
+    ctx.drawImage(img,pony.x,pony.y,SIZE,SIZE);
   }
-
   ctx.restore();
 }
 </script>
+
 </body>
 </html>
