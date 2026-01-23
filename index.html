@@ -186,38 +186,35 @@ function update(){
     pony.frame=0;
   }
 
-// 👁️ GLITCH mira al jugador (lógica estable)
+// 👁️ GLITCH mira correctamente (calibrado)
 const dx = pony.x - glitch.x;
 const dy = pony.y - glitch.y;
-const dist = Math.sqrt(dx*dx + dy*dy);
+const dist = Math.hypot(dx, dy);
 
 lookTimer++;
 
-if(dist < 300 && lookTimer > 30 && Math.random() < 0.2){
-  const ax = Math.abs(dx);
-  const ay = Math.abs(dy);
+if (dist < 300 && Math.random() < 0.08) {
+  const angle = Math.atan2(dy, dx);
 
-  if(ax < ay){
-    // vertical
-    if(dy > 0) lookTarget = 3; // abajo
-    else lookTarget = 7;      // arriba
-  } else if(ay < ax){
-    // horizontal
-    if(dx > 0) lookTarget = 1; // derecha
-    else lookTarget = 5;      // izquierda
-  } else {
-    // diagonales
-    if(dx > 0 && dy > 0) lookTarget = 2; // abajo-der
-    else if(dx < 0 && dy > 0) lookTarget = 4; // abajo-izq
-    else if(dx < 0 && dy < 0) lookTarget = 6; // arriba-izq
-    else if(dx > 0 && dy < 0) lookTarget = 8; // arriba-der
+  // mapa personalizado
+  if (angle > -0.785 && angle <= 0.785) {
+    lookTarget = 1; // derecha
+  }
+  else if (angle > 0.785 && angle <= 2.356) {
+    lookTarget = 3; // abajo
+  }
+  else if (angle > 2.356 || angle <= -2.356) {
+    lookTarget = 5; // izquierda
+  }
+  else if (angle > -2.356 && angle <= -0.785) {
+    lookTarget = 7; // arriba
   }
 
   lookTimer = 0;
 }
 
 // vuelve a neutral
-if(lookTimer > 220){
+if (lookTimer > 220) {
   lookTarget = 0;
 }
 
