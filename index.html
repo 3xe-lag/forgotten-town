@@ -48,7 +48,6 @@ canvas { display:block; }
 </div>
 
 <script>
-/* ===== CANVAS ===== */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -64,19 +63,6 @@ const keys = { up:false, down:false, left:false, right:false };
 function press(k){ keys[k]=true; }
 function release(k){ keys[k]=false; }
 
-document.addEventListener("keydown", e=>{
-  if(e.key==="ArrowUp")press("up");
-  if(e.key==="ArrowDown")press("down");
-  if(e.key==="ArrowLeft")press("left");
-  if(e.key==="ArrowRight")press("right");
-});
-document.addEventListener("keyup", e=>{
-  if(e.key==="ArrowUp")release("up");
-  if(e.key==="ArrowDown")release("down");
-  if(e.key==="ArrowLeft")release("left");
-  if(e.key==="ArrowRight")release("right");
-});
-
 /* ===== CONFIG ===== */
 const SIZE = 128;
 const SPEED = 4;
@@ -84,11 +70,9 @@ const WALK_DELAY = 3;
 const BLINK_INTERVAL = 5000;
 const BLINK_DELAY = 2;
 
-/* ===== CÁMARA + ZOOM ===== */
+/* ===== CÁMARA ===== */
 let camera = { x: 0, y: 0 };
 let zoom = 1;
-const MIN_ZOOM = 0.5;
-const MAX_ZOOM = 2;
 
 /* ===== JUGADOR ===== */
 let pony = {
@@ -102,20 +86,7 @@ let pony = {
 };
 
 /* ===== GLITCH ===== */
-let glitch = {
-  x: 650,
-  y: 500,
-  state: "neutral",
-  lookIndex: 0,
-  stateTimer: Date.now()
-};
-
-/* ===== ZOOM ===== */
-canvas.addEventListener("wheel", e=>{
-  e.preventDefault();
-  zoom += e.deltaY * -0.001;
-  zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
-});
+let glitch = { x: 650, y: 500 };
 
 /* ===== CARGA ===== */
 let imagesToLoad=0, imagesLoaded=0;
@@ -126,7 +97,7 @@ function onImageLoad(){
   }
 }
 
-const walkFrames=[], idleFrames=[], glitchLooks=[];
+const walkFrames=[], idleFrames=[];
 
 for(let i=0;i<=15;i++){
   imagesToLoad++;
@@ -142,13 +113,6 @@ for(let i=0;i<=3;i++){
   img.src=`sprites/idle/idle_${i}.png`;
   idleFrames.push(img);
 }
-for(let i=0;i<=8;i++){
-  imagesToLoad++;
-  const img=new Image();
-  img.onload=onImageLoad;
-  img.src=`sprites/glitch/look/look_${i}.png`;
-  glitchLooks.push(img);
-}
 
 /* ===== UPDATE ===== */
 function update(){
@@ -159,8 +123,8 @@ function update(){
   if(keys.left){pony.x-=SPEED;pony.facing="left";pony.moving=true;}
   if(keys.right){pony.x+=SPEED;pony.facing="right";pony.moving=true;}
 
-  camera.x = pony.x - canvas.width/(2*zoom) + SIZE/2;
-  camera.y = pony.y - canvas.height/(2*zoom) + SIZE/2;
+  camera.x = pony.x - canvas.width/2 + SIZE/2;
+  camera.y = pony.y - canvas.height/2 + SIZE/2;
 
   if(pony.moving){
     pony.tick++;
@@ -192,57 +156,23 @@ function update(){
     pony.frame=0;
   }
 
-  // ===== IA GLITCH =====
-  const dx = pony.x - glitch.x;
-  const dy = pony.y - glitch.y;
-  const dist = Math.hypot(dx, dy);
-  const now = Date.now();
-
-  if (dist < 220 && glitch.state === "neutral" && Math.random() < 0.02) {
-    glitch.state = "look";
-    glitch.stateTimer = now;
-  }
-
-  if (glitch.state === "look") {
-    if (now - glitch.stateTimer > 3000) {
-      glitch.state = "bored";
-      glitch.stateTimer = now;
-    } else {
-      let ix = 0;
-      if (dx < -20 && dy < -20) ix = 5;
-      else if (dx > 20 && dy < -20) ix = 6;
-      else if (dx < -20 && dy > 20) ix = 7;
-      else if (dx > 20 && dy > 20) ix = 8;
-      else if (dx < -20) ix = 1;
-      else if (dx > 20) ix = 2;
-      else if (dy < -20) ix = 3;
-      else if (dy > 20) ix = 4;
-      glitch.lookIndex = ix;
-    }
-  }
-
-  if (glitch.state === "bored" && now - glitch.stateTimer > 2000) {
-    glitch.state = "neutral";
-    glitch.lookIndex = 0;
-    glitch.stateTimer = now;
-  }
-
   draw();
   requestAnimationFrame(update);
 }
 
 /* ===== DRAW ===== */
 function draw(){
-  ctx.setTransform(zoom,0,0,zoom,0,0);
-  ctx.clearRect(0,0,canvas.width/zoom,canvas.height/zoom);
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  const px = pony.x - camera.x;
-  const py = pony.y - camera.y;
-  const gx = glitch.x - camera.x;
-  const gy = glitch.y - camera.y;
+  ctx.save();
+  ctx.scale(zoom, zoom);
+  ctx.translate(-camera.x, -camera.y);
 
-  ctx.drawImage(glitchLooks[glitch.lookIndex], gx, gy, SIZE, SIZE);
+  // GLITCH
+  ctx.drawImage(idleFrames[0], glitch.x, glitch.y, SIZE, SIZE);
 
+  // PLAYER
   let img;
   if(pony.moving){
     img = walkFrames[pony.frame];
@@ -253,19 +183,18 @@ function draw(){
     img = idleFrames[0];
   }
 
-  ctx.save();
   if(pony.facing==="left"){
-    ctx.translate(px+SIZE,py);
+    ctx.save();
+    ctx.translate(pony.x+SIZE, pony.y);
     ctx.scale(-1,1);
     ctx.drawImage(img,0,0,SIZE,SIZE);
+    ctx.restore();
   }else{
-    ctx.drawImage(img,px,py,SIZE,SIZE);
+    ctx.drawImage(img, pony.x, pony.y, SIZE, SIZE);
   }
-  ctx.restore();
 
-  ctx.setTransform(1,0,0,1,0,0);
+  ctx.restore();
 }
 </script>
-
 </body>
 </html>
