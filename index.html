@@ -81,35 +81,51 @@ document.addEventListener("keyup", e=>{
 const SIZE = 128;
 const SPEED = 4;
 const WALK_DELAY = 3;
+const BLINK_INTERVAL = 5000;
+const BLINK_DELAY = 2;
+
+/* ===== CÁMARA + ZOOM ===== */
+let camera = { x: 0, y: 0 };
+let zoom = 1;
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 2;
 
 /* ===== JUGADOR ===== */
 let pony = {
-  x: 400, y: 300,
-  frame: 0, tick: 0,
+  x: canvas.width/2 - SIZE/2,
+  y: canvas.height/2 - SIZE/2,
+  frame: 0,
+  tick: 0,
   facing: "right",
-  moving: false
+  moving: false,
+  blinking:false,
+  blinkIndex:0,
+  blinkTimer:Date.now()
 };
 
-/* ===== GLITCH ===== */
+/* ===== GLITCH NPC ===== */
 let glitch = {
-  x: 650,
-  y: 300,
-  lookIndex: 0,
-  looking: false,
-  lookTimer: 0,
-  cooldown: 0
+  x: canvas.width/2 + 140,
+  y: canvas.height/2,
+  facing: "left"
 };
 
-/* ===== CARGA ===== */
-let imagesToLoad = 0, imagesLoaded = 0;
+/* ===== ZOOM ===== */
+canvas.addEventListener("wheel", e=>{
+  e.preventDefault();
+  zoom += e.deltaY * -0.001;
+  zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
+});
+
+/* ===== CARGA IMÁGENES ===== */
+let imagesToLoad=0, imagesLoaded=0;
 function onImageLoad(){
   imagesLoaded++;
-  if(imagesLoaded === imagesToLoad){
+  if(imagesLoaded===imagesToLoad){
     requestAnimationFrame(update);
   }
 }
 
-/* caminar */
 const walkFrames=[];
 for(let i=0;i<=15;i++){
   imagesToLoad++;
@@ -119,7 +135,6 @@ for(let i=0;i<=15;i++){
   walkFrames.push(img);
 }
 
-/* idle */
 const idleFrames=[];
 for(let i=0;i<=3;i++){
   imagesToLoad++;
@@ -127,16 +142,6 @@ for(let i=0;i<=3;i++){
   img.onload=onImageLoad;
   img.src=`sprites/idle/idle_${i}.png`;
   idleFrames.push(img);
-}
-
-/* GLITCH LOOK */
-const glitchLook=[];
-for(let i=0;i<=8;i++){
-  imagesToLoad++;
-  const img=new Image();
-  img.onload=onImageLoad;
-  img.src=`https://raw.githubusercontent.com/3xe-lag/forgotten-town/main/sprites/glitch_look/look_${i}.png`;
-  glitchLook.push(img);
 }
 
 /* ===== UPDATE ===== */
@@ -148,45 +153,40 @@ function update(){
   if(keys.left){pony.x-=SPEED;pony.facing="left";pony.moving=true;}
   if(keys.right){pony.x+=SPEED;pony.facing="right";pony.moving=true;}
 
-  // caminar
+  pony.x = Math.max(0, Math.min(canvas.width - SIZE, pony.x));
+  pony.y = Math.max(0, Math.min(canvas.height - SIZE, pony.y));
+
+  camera.x = pony.x - canvas.width/(2*zoom) + SIZE/2;
+  camera.y = pony.y - canvas.height/(2*zoom) + SIZE/2;
+
   if(pony.moving){
     pony.tick++;
     if(pony.tick>=WALK_DELAY){
       pony.frame=(pony.frame+1)%walkFrames.length;
       pony.tick=0;
     }
+    pony.blinking=false;
+    pony.blinkIndex=0;
+    pony.blinkTimer=Date.now();
   } else {
+    if(!pony.blinking && Date.now()-pony.blinkTimer>BLINK_INTERVAL){
+      pony.blinking=true;
+      pony.blinkIndex=0;
+      pony.tick=0;
+    }
+    if(pony.blinking){
+      pony.tick++;
+      if(pony.tick>=BLINK_DELAY){
+        pony.tick=0;
+        pony.blinkIndex++;
+        if(pony.blinkIndex>=6){
+          pony.blinking=false;
+          pony.blinkIndex=0;
+          pony.blinkTimer=Date.now();
+        }
+      }
+    }
     pony.frame=0;
-  }
-
-  // distancia a Glitch
-  const dx = pony.x - glitch.x;
-  const dy = pony.y - glitch.y;
-  const dist = Math.sqrt(dx*dx + dy*dy);
-
-  if(glitch.cooldown > 0) glitch.cooldown--;
-
-  if(dist < 200 && !glitch.looking && glitch.cooldown <= 0){
-    if(Math.random() < 0.02){
-      glitch.looking = true;
-      glitch.lookTimer = 180;
-    }
-  }
-
-  if(glitch.looking){
-    glitch.lookTimer--;
-
-    if(Math.abs(dx) > Math.abs(dy)){
-      glitch.lookIndex = dx > 0 ? 2 : 1;
-    } else {
-      glitch.lookIndex = dy > 0 ? 4 : 3;
-    }
-
-    if(glitch.lookTimer <= 0){
-      glitch.looking = false;
-      glitch.lookIndex = 0;
-      glitch.cooldown = 300;
-    }
   }
 
   draw();
@@ -195,23 +195,37 @@ function update(){
 
 /* ===== DRAW ===== */
 function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.setTransform(zoom,0,0,zoom,0,0);
+  ctx.clearRect(0,0,canvas.width/zoom,canvas.height/zoom);
 
-  // GLITCH
-  ctx.drawImage(glitchLook[glitch.lookIndex], glitch.x, glitch.y, SIZE, SIZE);
+  const px = pony.x - camera.x;
+  const py = pony.y - camera.y;
+  const gx = glitch.x - camera.x;
+  const gy = glitch.y - camera.y;
 
-  // JUGADOR
-  let img = pony.moving ? walkFrames[pony.frame] : idleFrames[0];
+  ctx.drawImage(idleFrames[0], gx, gy, SIZE, SIZE);
+
+  let img;
+  if(pony.moving){
+    img = walkFrames[pony.frame];
+  }else if(pony.blinking){
+    const seq=[0,1,2,3,2,1];
+    img = idleFrames[seq[pony.blinkIndex]];
+  }else{
+    img = idleFrames[0];
+  }
 
   ctx.save();
   if(pony.facing==="left"){
-    ctx.translate(pony.x+SIZE,pony.y);
+    ctx.translate(px+SIZE,py);
     ctx.scale(-1,1);
     ctx.drawImage(img,0,0,SIZE,SIZE);
   }else{
-    ctx.drawImage(img,pony.x,pony.y,SIZE,SIZE);
+    ctx.drawImage(img,px,py,SIZE,SIZE);
   }
   ctx.restore();
+
+  ctx.setTransform(1,0,0,1,0,0);
 }
 </script>
 
