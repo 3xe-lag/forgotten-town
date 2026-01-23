@@ -101,33 +101,23 @@ let pony = {
   blinkTimer:Date.now()
 };
 
-/* ===== GLITCH (NPC) ===== */
-let glitch = { x: 650, y: 500 };
+/* ===== GLITCH ===== */
+let glitch = {
+  x: 650,
+  y: 500,
+  state: "neutral",
+  lookIndex: 0,
+  stateTimer: Date.now()
+};
 
-/* ===== ZOOM CON RUEDA ===== */
+/* ===== ZOOM ===== */
 canvas.addEventListener("wheel", e=>{
   e.preventDefault();
   zoom += e.deltaY * -0.001;
   zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
 });
 
-/* ===== ZOOM CON PINCH ===== */
-let lastDist = null;
-canvas.addEventListener("touchmove", e=>{
-  if(e.touches.length===2){
-    const dx=e.touches[0].clientX-e.touches[1].clientX;
-    const dy=e.touches[0].clientY-e.touches[1].clientY;
-    const dist=Math.sqrt(dx*dx+dy*dy);
-    if(lastDist){
-      zoom += (dist-lastDist)*0.002;
-      zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
-    }
-    lastDist=dist;
-  }
-});
-canvas.addEventListener("touchend", ()=> lastDist=null);
-
-/* ===== CARGA IMÁGENES ===== */
+/* ===== CARGA ===== */
 let imagesToLoad=0, imagesLoaded=0;
 function onImageLoad(){
   imagesLoaded++;
@@ -136,7 +126,8 @@ function onImageLoad(){
   }
 }
 
-const walkFrames=[];
+const walkFrames=[], idleFrames=[], glitchLooks=[];
+
 for(let i=0;i<=15;i++){
   imagesToLoad++;
   const img=new Image();
@@ -144,14 +135,19 @@ for(let i=0;i<=15;i++){
   img.src=`sprites/caminar/caminar_${i}.png`;
   walkFrames.push(img);
 }
-
-const idleFrames=[];
 for(let i=0;i<=3;i++){
   imagesToLoad++;
   const img=new Image();
   img.onload=onImageLoad;
   img.src=`sprites/idle/idle_${i}.png`;
   idleFrames.push(img);
+}
+for(let i=0;i<=8;i++){
+  imagesToLoad++;
+  const img=new Image();
+  img.onload=onImageLoad;
+  img.src=`sprites/glitch/look/look_${i}.png`;
+  glitchLooks.push(img);
 }
 
 /* ===== UPDATE ===== */
@@ -196,6 +192,41 @@ function update(){
     pony.frame=0;
   }
 
+  // ===== IA GLITCH =====
+  const dx = pony.x - glitch.x;
+  const dy = pony.y - glitch.y;
+  const dist = Math.hypot(dx, dy);
+  const now = Date.now();
+
+  if (dist < 220 && glitch.state === "neutral" && Math.random() < 0.02) {
+    glitch.state = "look";
+    glitch.stateTimer = now;
+  }
+
+  if (glitch.state === "look") {
+    if (now - glitch.stateTimer > 3000) {
+      glitch.state = "bored";
+      glitch.stateTimer = now;
+    } else {
+      let ix = 0;
+      if (dx < -20 && dy < -20) ix = 5;
+      else if (dx > 20 && dy < -20) ix = 6;
+      else if (dx < -20 && dy > 20) ix = 7;
+      else if (dx > 20 && dy > 20) ix = 8;
+      else if (dx < -20) ix = 1;
+      else if (dx > 20) ix = 2;
+      else if (dy < -20) ix = 3;
+      else if (dy > 20) ix = 4;
+      glitch.lookIndex = ix;
+    }
+  }
+
+  if (glitch.state === "bored" && now - glitch.stateTimer > 2000) {
+    glitch.state = "neutral";
+    glitch.lookIndex = 0;
+    glitch.stateTimer = now;
+  }
+
   draw();
   requestAnimationFrame(update);
 }
@@ -210,7 +241,7 @@ function draw(){
   const gx = glitch.x - camera.x;
   const gy = glitch.y - camera.y;
 
-  ctx.drawImage(idleFrames[0], gx, gy, SIZE, SIZE);
+  ctx.drawImage(glitchLooks[glitch.lookIndex], gx, gy, SIZE, SIZE);
 
   let img;
   if(pony.moving){
