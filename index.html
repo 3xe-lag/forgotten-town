@@ -7,35 +7,34 @@
 
 <style>
 html, body {
-  margin: 0;
-  padding: 0;
-  background: #222;
-  overflow: hidden;
-  touch-action: none;
+  margin:0;
+  padding:0;
+  background:#222;
+  overflow:hidden;
+  touch-action:none;
 }
 canvas { display:block; }
 
-.controls {
-  position: fixed;
-  bottom: 16px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  z-index: 10;
+.controls{
+  position:fixed;
+  bottom:16px;
+  left:0;
+  right:0;
+  text-align:center;
+  z-index:10;
 }
-.controls button {
-  width: 64px;
-  height: 64px;
-  font-size: 26px;
-  margin: 4px;
-  border-radius: 10px;
-  border: none;
-  background: #8a5ccf;
-  color: white;
+.controls button{
+  width:64px;
+  height:64px;
+  font-size:26px;
+  margin:4px;
+  border-radius:10px;
+  border:none;
+  background:#8a5ccf;
+  color:white;
 }
 </style>
 </head>
-
 <body>
 
 <canvas id="game"></canvas>
@@ -48,7 +47,6 @@ canvas { display:block; }
 </div>
 
 <script>
-/* ===== CANVAS ===== */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -59,53 +57,50 @@ function resize(){
 window.addEventListener("resize", resize);
 resize();
 
-/* ===== CONTROLES ===== */
+/* ================= CONFIG ================= */
+const SIZE = 128;
+const SPEED = 4;
+const WALK_DELAY = 4;
+const WORLD_W = 3000;
+const WORLD_H = 3000;
+
+/* ================= CONTROLES ================= */
 const keys = { up:false, down:false, left:false, right:false };
 function press(k){ keys[k]=true; }
 function release(k){ keys[k]=false; }
 
-document.addEventListener("keydown", e=>{
-  if(e.key==="ArrowUp")press("up");
-  if(e.key==="ArrowDown")press("down");
-  if(e.key==="ArrowLeft")press("left");
-  if(e.key==="ArrowRight")press("right");
-});
-document.addEventListener("keyup", e=>{
-  if(e.key==="ArrowUp")release("up");
-  if(e.key==="ArrowDown")release("down");
-  if(e.key==="ArrowLeft")release("left");
-  if(e.key==="ArrowRight")release("right");
-});
+/* ================= JUGADORES ================= */
+let players = {};
 
-/* ===== CONFIG ===== */
-const SIZE = 128;
-const SPEED = 4;
-const WALK_DELAY = 3;
-const BLINK_INTERVAL = 5000;
-const BLINK_DELAY = 2;
-const WORLD_W = 3000;
-const WORLD_H = 3000;
+function createPlayer(id, name, x, y, isAI=false){
+  players[id] = {
+    id,
+    name,
+    x,
+    y,
+    frame:0,
+    tick:0,
+    facing:"right",
+    moving:false,
+    isAI,
+    dirTimer:0,
+    dirX:0,
+    dirY:0
+  };
+}
 
-/* ===== CÁMARA ===== */
-let camera = { x: 0, y: 0 };
+/* Crear jugador principal */
+createPlayer("me", "TÚ", 500, 500);
 
-/* ===== JUGADOR ===== */
-let pony = {
-  x: 400, y: 400,
-  frame: 0, tick: 0,
-  facing: "right",
-  moving: false,
-  blinking:false,
-  blinkIndex:0,
-  blinkTimer:Date.now()
-};
+/* Crear jugadores falsos */
+createPlayer("bot1", "Nova", 800, 600, true);
+createPlayer("bot2", "Echo", 900, 400, true);
+createPlayer("bot3", "Pixel", 600, 900, true);
 
-/* ===== GLITCH ===== */
-let glitch = { x: 650, y: 420 };
-let lookTarget = 0;
-let lookTimer = 0;
+/* ================= CÁMARA ================= */
+let camera = { x:0, y:0 };
 
-/* ===== IMÁGENES ===== */
+/* ================= IMÁGENES ================= */
 let imagesToLoad=0, imagesLoaded=0;
 function onImageLoad(){
   imagesLoaded++;
@@ -132,131 +127,95 @@ for(let i=0;i<=3;i++){
   idleFrames.push(img);
 }
 
-const glitchLooks=[];
-for(let i=0;i<=8;i++){
-  imagesToLoad++;
-  const img=new Image();
-  img.onload=onImageLoad;
-  img.src=`sprites/glitch_look/look_${i}.png`;
-  glitchLooks.push(img);
-}
-
-/* ===== UPDATE ===== */
+/* ================= UPDATE ================= */
 function update(){
-  pony.moving=false;
 
-  if(keys.up){pony.y-=SPEED;pony.moving=true;}
-  if(keys.down){pony.y+=SPEED;pony.moving=true;}
-  if(keys.left){pony.x-=SPEED;pony.facing="left";pony.moving=true;}
-  if(keys.right){pony.x+=SPEED;pony.facing="right";pony.moving=true;}
+  /* ===== CONTROL JUGADOR ===== */
+  const me = players["me"];
+  me.moving=false;
 
-  pony.x = Math.max(0, Math.min(WORLD_W - SIZE, pony.x));
-  pony.y = Math.max(0, Math.min(WORLD_H - SIZE, pony.y));
+  if(keys.up){ me.y-=SPEED; me.moving=true; }
+  if(keys.down){ me.y+=SPEED; me.moving=true; }
+  if(keys.left){ me.x-=SPEED; me.facing="left"; me.moving=true; }
+  if(keys.right){ me.x+=SPEED; me.facing="right"; me.moving=true; }
 
-  camera.x = pony.x - canvas.width/2 + SIZE/2;
-  camera.y = pony.y - canvas.height/2 + SIZE/2;
+  me.x=Math.max(0,Math.min(WORLD_W-SIZE,me.x));
+  me.y=Math.max(0,Math.min(WORLD_H-SIZE,me.y));
 
-  if(pony.moving){
-    pony.tick++;
-    if(pony.tick>=WALK_DELAY){
-      pony.frame=(pony.frame+1)%walkFrames.length;
-      pony.tick=0;
+  /* ===== IA JUGADORES FALSOS ===== */
+  for(let id in players){
+    let p = players[id];
+    if(!p.isAI) continue;
+
+    p.dirTimer--;
+    if(p.dirTimer<=0){
+      p.dirTimer = Math.random()*120+60;
+      p.dirX = Math.floor(Math.random()*3)-1;
+      p.dirY = Math.floor(Math.random()*3)-1;
     }
-    pony.blinking=false;
-    pony.blinkIndex=0;
-    pony.blinkTimer=Date.now();
-  } else {
-    if(!pony.blinking && Date.now()-pony.blinkTimer>BLINK_INTERVAL){
-      pony.blinking=true;
-      pony.blinkIndex=0;
-      pony.tick=0;
-    }
-    if(pony.blinking){
-      pony.tick++;
-      if(pony.tick>=BLINK_DELAY){
-        pony.tick=0;
-        pony.blinkIndex++;
-        if(pony.blinkIndex>=6){
-          pony.blinking=false;
-          pony.blinkIndex=0;
-          pony.blinkTimer=Date.now();
-        }
+
+    p.x += p.dirX * 2;
+    p.y += p.dirY * 2;
+
+    if(p.dirX<0) p.facing="left";
+    if(p.dirX>0) p.facing="right";
+
+    p.x=Math.max(0,Math.min(WORLD_W-SIZE,p.x));
+    p.y=Math.max(0,Math.min(WORLD_H-SIZE,p.y));
+  }
+
+  /* ===== ANIMACIONES ===== */
+  for(let id in players){
+    let p = players[id];
+
+    if(p.moving || p.isAI){
+      p.tick++;
+      if(p.tick>=WALK_DELAY){
+        p.frame=(p.frame+1)%walkFrames.length;
+        p.tick=0;
       }
+    }else{
+      p.frame=0;
     }
-    pony.frame=0;
   }
 
-// 👁️ GLITCH mira correctamente (calibrado)
-const dx = pony.x - glitch.x;
-const dy = pony.y - glitch.y;
-const dist = Math.hypot(dx, dy);
-
-lookTimer++;
-
-if (dist < 300 && Math.random() < 0.08) {
-  const angle = Math.atan2(dy, dx);
-
-  // mapa personalizado
-  if (angle > -0.785 && angle <= 0.785) {
-    lookTarget = 1; // derecha
-  }
-  else if (angle > 0.785 && angle <= 2.356) {
-    lookTarget = 3; // abajo
-  }
-  else if (angle > 2.356 || angle <= -2.356) {
-    lookTarget = 5; // izquierda
-  }
-  else if (angle > -2.356 && angle <= -0.785) {
-    lookTarget = 7; // arriba
-  }
-
-  lookTimer = 0;
-}
-
-// vuelve a neutral
-if (lookTimer > 220) {
-  lookTarget = 0;
-}
+  /* ===== CÁMARA CENTRADA EN TI ===== */
+  camera.x = me.x - canvas.width/2 + SIZE/2;
+  camera.y = me.y - canvas.height/2 + SIZE/2;
 
   draw();
   requestAnimationFrame(update);
 }
 
-/* ===== DRAW ===== */
+/* ================= DRAW ================= */
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  const px = pony.x - camera.x;
-  const py = pony.y - camera.y;
-  const gx = glitch.x - camera.x;
-  const gy = glitch.y - camera.y;
+  for(let id in players){
+    let p = players[id];
 
-  // GLITCH
-  let gImg = glitchLooks[lookTarget] || glitchLooks[0];
-  ctx.drawImage(gImg, gx, gy, SIZE, SIZE);
+    const px = p.x - camera.x;
+    const py = p.y - camera.y;
 
-  // JUGADOR
-  let img;
-  if(pony.moving){
-    img = walkFrames[pony.frame];
-  }else if(pony.blinking){
-    const seq=[0,1,2,3,2,1];
-    img = idleFrames[seq[pony.blinkIndex]];
-  }else{
-    img = idleFrames[0];
+    let img = walkFrames[p.frame] || idleFrames[0];
+
+    ctx.save();
+    if(p.facing==="left"){
+      ctx.translate(px+SIZE,py);
+      ctx.scale(-1,1);
+      ctx.drawImage(img,0,0,SIZE,SIZE);
+    }else{
+      ctx.drawImage(img,px,py,SIZE,SIZE);
+    }
+    ctx.restore();
+
+    /* Nombre arriba */
+    ctx.fillStyle="white";
+    ctx.font="18px Arial";
+    ctx.textAlign="center";
+    ctx.fillText(p.name, px+SIZE/2, py-10);
   }
-
-  ctx.save();
-  if(pony.facing==="left"){
-    ctx.translate(px+SIZE,py);
-    ctx.scale(-1,1);
-    ctx.drawImage(img,0,0,SIZE,SIZE);
-  }else{
-    ctx.drawImage(img,px,py,SIZE,SIZE);
-  }
-  ctx.restore();
 }
 </script>
-
 </body>
 </html>
