@@ -87,9 +87,23 @@ let pony = {
 
 /* ===== NPCs ===== */
 let npcs = [
-  { x: pony.x + 200, y: pony.y - 150, vx:0, vy:0, timer:0 },
-  { x: pony.x - 250, y: pony.y + 100, vx:0, vy:0, timer:0 }
+  createNPC(pony.x + 200, pony.y - 150),
+  createNPC(pony.x - 250, pony.y + 100)
 ];
+
+function createNPC(x,y){
+  return {
+    x:x,
+    y:y,
+    vx:0,
+    vy:0,
+    timer:0,
+    frame:0,
+    tick:0,
+    moving:false,
+    facing:"right"
+  };
+}
 
 /* ===== IMÁGENES ===== */
 let imagesToLoad=0, imagesLoaded=0;
