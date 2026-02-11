@@ -140,8 +140,8 @@ canvas.addEventListener("touchstart", e=>{
 
 canvas.addEventListener("touchmove", e=>{
   if(!joyActive) return;
-  const touch = e.touches[0];
 
+  const touch = e.touches[0];
   let dx = touch.clientX - joyX;
   let dy = touch.clientY - joyY;
 
@@ -208,11 +208,11 @@ function update(){
   pony.x=Math.max(0,Math.min(WORLD_W-SIZE,pony.x));
   pony.y=Math.max(0,Math.min(WORLD_H-SIZE,pony.y));
 
-  /* ===== CÁMARA SIGUE AL PONY ===== */
+  /* ===== CÁMARA SIGUE ===== */
   camera.x = pony.x - (canvas.width/(2*zoom)) + SIZE/2;
   camera.y = pony.y - (canvas.height/(2*zoom)) + SIZE/2;
 
-  /* ===== ANIMACIÓN ===== */
+  /* ===== ANIMACIÓN JUGADOR ===== */
   if(pony.moving){
     pony.tick++;
     if(pony.tick>=WALK_DELAY){
@@ -243,6 +243,29 @@ function update(){
     pony.frame=0;
   }
 
+  /* ===== NPC MOVIMIENTO ===== */
+  npcs.forEach(npc=>{
+    npc.timer--;
+
+    if(npc.timer <= 0){
+      if(Math.random() < 0.5){
+        npc.vx = 0;
+        npc.vy = 0;
+      }else{
+        const angle = Math.random() * Math.PI * 2;
+        npc.vx = Math.cos(angle) * 1.5;
+        npc.vy = Math.sin(angle) * 1.5;
+      }
+      npc.timer = 60 + Math.random()*120;
+    }
+
+    npc.x += npc.vx;
+    npc.y += npc.vy;
+
+    npc.x = Math.max(0, Math.min(WORLD_W - SIZE, npc.x));
+    npc.y = Math.max(0, Math.min(WORLD_H - SIZE, npc.y));
+  });
+
   draw();
   requestAnimationFrame(update);
 }
@@ -253,35 +276,12 @@ function draw(){
   ctx.setTransform(zoom,0,0,zoom,0,0);
   ctx.clearRect(0,0,canvas.width/zoom,canvas.height/zoom);
 
-/* ===== NPC MOVIMIENTO ===== */
-npcs.forEach(npc=>{
-
-  npc.timer--;
-
-  // Cuando el contador llega a 0 decide qué hacer
-  if(npc.timer <= 0){
-
-    // 50% probabilidad de quedarse quieto
-    if(Math.random() < 0.5){
-      npc.vx = 0;
-      npc.vy = 0;
-    }else{
-      // Dirección aleatoria
-      const angle = Math.random() * Math.PI * 2;
-      npc.vx = Math.cos(angle) * 1.5;
-      npc.vy = Math.sin(angle) * 1.5;
-    }
-
-    npc.timer = 60 + Math.random()*120; // tiempo antes de cambiar otra vez
-  }
-
-  npc.x += npc.vx;
-  npc.y += npc.vy;
-
-  // límites del mundo
-  npc.x = Math.max(0, Math.min(WORLD_W - SIZE, npc.x));
-  npc.y = Math.max(0, Math.min(WORLD_H - SIZE, npc.y));
-});
+  /* ===== NPCs ===== */
+  npcs.forEach(npc=>{
+    const nx = npc.x - camera.x;
+    const ny = npc.y - camera.y;
+    ctx.drawImage(idleFrames[0], nx, ny, SIZE, SIZE);
+  });
 
   /* ===== JUGADOR ===== */
   const px = pony.x - camera.x;
