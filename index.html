@@ -6,38 +6,59 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 <style>
-html, body{
-  margin:0;
-  padding:0;
-  background:#222;
-  overflow:hidden;
-  touch-action:none;
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #222;
+  overflow: hidden;
+  touch-action: none;
 }
-canvas{ display:block; }
+canvas { display:block; }
 
-/* ===== JOYSTICK ===== */
-#joystick{
-  position:fixed;
-  width:120px;
-  height:120px;
-  border-radius:50%;
-  background:rgba(255,255,255,0.08);
-  display:none;
-  z-index:20;
+/* JOYSTICK */
+#joystick {
+  position: fixed;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  display: none;
+  z-index: 20;
 }
-#stick{
-  position:absolute;
-  width:60px;
-  height:60px;
-  border-radius:50%;
-  background:rgba(255,255,255,0.3);
-  left:30px;
-  top:30px;
+#stick {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  left: 30px;
+  top: 30px;
+}
+
+/* BOTÓN ACCIÓN */
+#actionBtn {
+  position:fixed;
+  bottom:140px;
+  right:20px;
+  padding:12px 18px;
+  font-size:18px;
+  display:none;
+  z-index:30;
+}
+#ui {
+  position:fixed;
+  top:10px;
+  left:10px;
+  color:white;
+  font-size:22px;
+  z-index:50;
 }
 </style>
 </head>
 
 <body>
+
+<div id="ui">Madera: <span id="woodCount">0</span></div>
 
 <canvas id="game"></canvas>
 
@@ -45,9 +66,9 @@ canvas{ display:block; }
   <div id="stick"></div>
 </div>
 
-<script>
+<button id="actionBtn">Acción</button>
 
-/* ===== CANVAS ===== */
+<script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -58,36 +79,37 @@ function resize(){
 window.addEventListener("resize", resize);
 resize();
 
-/* ===== CONFIG ===== */
-const SIZE = 96;
+/* CONFIG */
+const SIZE = 128;
 const SPEED = 4;
-const WALK_DELAY = 4;
 const WORLD_W = 3000;
 const WORLD_H = 3000;
 
-/* ===== CÁMARA + ZOOM ===== */
-let camera = {x:0,y:0};
+/* CÁMARA */
+let camera = { x: 0, y: 0 };
 let zoom = 1;
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 2;
 
-/* ===== JUGADOR ===== */
+/* RECURSOS */
+let wood = 0;
+const woodUI = document.getElementById("woodCount");
+
+/* JUGADOR */
 let pony = {
   x: WORLD_W/2,
   y: WORLD_H/2,
-  frame:0,
-  tick:0,
+  frame: 0,
+  tick: 0,
   moving:false,
   facing:"right"
 };
 
-/* ===== NPC FACTORY ===== */
+/* NPC */
 function createNPC(x,y){
   return {
-    x:x,
-    y:y,
-    vx:0,
-    vy:0,
+    x,y,
+    vx:0,vy:0,
     timer:0,
     frame:0,
     tick:0,
@@ -95,23 +117,45 @@ function createNPC(x,y){
     facing:"right"
   };
 }
-
 let npcs = [
-  createNPC(pony.x+200, pony.y-150),
-  createNPC(pony.x-250, pony.y+100)
+  createNPC(pony.x+200,pony.y-150),
+  createNPC(pony.x-250,pony.y+100)
 ];
 
-/* ===== ÁRBOLES FIJOS ===== */
+/* HACHA */
+let hasAxe = false;
+let axe = { x: pony.x+150, y: pony.y+80, picked:false };
+
+/* ÁRBOLES */
 let trees = [
-  {x:800,y:600},
-  {x:1200,y:900},
-  {x:600,y:1300}
+  { x: pony.x+400, y: pony.y-200, hp:4 },
+  { x: pony.x-500, y: pony.y+250, hp:4 }
 ];
 
-let wood = 0;
-let gatherStart = 0;
+/* ACCIÓN */
+let actionButton = null;
+const actionBtn = document.getElementById("actionBtn");
 
-/* ===== IMÁGENES ===== */
+actionBtn.onclick = ()=>{
+  if(actionButton==="pick"){
+    hasAxe = true;
+    axe.picked = true;
+  }
+  if(actionButton==="chop"){
+    trees.forEach(tree=>{
+      if(tree.target){
+        tree.hp--;
+        if(tree.hp<=0){
+          wood++;
+          woodUI.innerText = wood;
+          trees = trees.filter(t=>t!==tree);
+        }
+      }
+    });
+  }
+};
+
+/* IMÁGENES */
 let imagesToLoad=0, imagesLoaded=0;
 function onImageLoad(){
   imagesLoaded++;
@@ -138,17 +182,14 @@ for(let i=0;i<=3;i++){
   idleFrames.push(img);
 }
 
-/* ===== JOYSTICK ===== */
-const joystick=document.getElementById("joystick");
-const stick=document.getElementById("stick");
+/* JOYSTICK */
+const joystick = document.getElementById("joystick");
+const stick = document.getElementById("stick");
 
-let joyActive=false;
-let joyX=0;
-let joyY=0;
-let moveX=0;
-let moveY=0;
+let joyActive=false, joyX=0, joyY=0;
+let moveX=0, moveY=0;
 
-canvas.addEventListener("touchstart",e=>{
+canvas.addEventListener("touchstart", e=>{
   const t=e.touches[0];
   joyActive=true;
   joystick.style.display="block";
@@ -158,8 +199,8 @@ canvas.addEventListener("touchstart",e=>{
   joyY=t.clientY;
 });
 
-canvas.addEventListener("touchmove",e=>{
-  if(!joyActive)return;
+canvas.addEventListener("touchmove", e=>{
+  if(!joyActive) return;
   const t=e.touches[0];
   let dx=t.clientX-joyX;
   let dy=t.clientY-joyY;
@@ -175,7 +216,7 @@ canvas.addEventListener("touchmove",e=>{
   moveY=dy/max;
 });
 
-canvas.addEventListener("touchend",()=>{
+canvas.addEventListener("touchend", ()=>{
   joyActive=false;
   joystick.style.display="none";
   stick.style.left="30px";
@@ -184,15 +225,15 @@ canvas.addEventListener("touchend",()=>{
   moveY=0;
 });
 
-/* ===== ZOOM ===== */
-canvas.addEventListener("wheel",e=>{
+/* ZOOM */
+canvas.addEventListener("wheel", e=>{
   e.preventDefault();
   zoom+=e.deltaY*-0.001;
   zoom=Math.max(MIN_ZOOM,Math.min(MAX_ZOOM,zoom));
 });
 
 let lastDist=null;
-canvas.addEventListener("touchmove",e=>{
+canvas.addEventListener("touchmove", e=>{
   if(e.touches.length===2){
     const dx=e.touches[0].clientX-e.touches[1].clientX;
     const dy=e.touches[0].clientY-e.touches[1].clientY;
@@ -206,19 +247,17 @@ canvas.addEventListener("touchmove",e=>{
 });
 canvas.addEventListener("touchend",()=>lastDist=null);
 
-/* ===== UPDATE ===== */
+/* UPDATE */
 function update(){
 
-  /* ===== MOVIMIENTO JUGADOR ===== */
   pony.moving=false;
 
   if(moveX||moveY){
     pony.x+=moveX*SPEED;
     pony.y+=moveY*SPEED;
     pony.moving=true;
-
-    if(moveX>0)pony.facing="right";
-    if(moveX<0)pony.facing="left";
+    if(moveX>0) pony.facing="right";
+    if(moveX<0) pony.facing="left";
   }
 
   pony.x=Math.max(0,Math.min(WORLD_W-SIZE,pony.x));
@@ -227,124 +266,100 @@ function update(){
   camera.x=pony.x-(canvas.width/(2*zoom))+SIZE/2;
   camera.y=pony.y-(canvas.height/(2*zoom))+SIZE/2;
 
-  if(pony.moving){
-    pony.tick++;
-    if(pony.tick>=WALK_DELAY){
-      pony.frame=(pony.frame+1)%walkFrames.length;
-      pony.tick=0;
-    }
-  }else{
-    pony.frame=0;
-  }
-
-  /* ===== NPC MOVIMIENTO SUAVE ===== */
+  /* NPC */
   npcs.forEach(npc=>{
     npc.timer--;
     if(npc.timer<=0){
       if(Math.random()<0.4){
-        npc.vx=0;
-        npc.vy=0;
+        npc.vx=0; npc.vy=0;
       }else{
-        const angle=Math.random()*Math.PI*2;
-        npc.vx=Math.cos(angle)*1.5;
-        npc.vy=Math.sin(angle)*1.5;
+        const a=Math.random()*Math.PI*2;
+        npc.vx=Math.cos(a)*1.5;
+        npc.vy=Math.sin(a)*1.5;
       }
-      npc.timer=80+Math.random()*120;
+      npc.timer=60+Math.random()*120;
     }
-
     npc.x+=npc.vx;
     npc.y+=npc.vy;
-
-    npc.x=Math.max(0,Math.min(WORLD_W-SIZE,npc.x));
-    npc.y=Math.max(0,Math.min(WORLD_H-SIZE,npc.y));
-
-    npc.moving=Math.abs(npc.vx)>0.1||Math.abs(npc.vy)>0.1;
-
-    if(npc.vx>0)npc.facing="right";
-    if(npc.vx<0)npc.facing="left";
-
-    if(npc.moving){
-      npc.tick++;
-      if(npc.tick>=WALK_DELAY){
-        npc.frame=(npc.frame+1)%walkFrames.length;
-        npc.tick=0;
-      }
-    }else{
-      npc.frame=0;
-    }
   });
 
-  /* ===== RECOLECCIÓN ===== */
-  let gathering=false;
+  /* PROXIMIDAD */
+  actionButton=null;
 
-  trees=trees.filter(tree=>{
-    const dx=pony.x-tree.x;
-    const dy=pony.y-tree.y;
-    const dist=Math.sqrt(dx*dx+dy*dy);
-
-    if(dist<120){
-      gathering=true;
-      if(!gatherStart)gatherStart=Date.now();
-      if(Date.now()-gatherStart>1000){
-        wood++;
-        gatherStart=0;
-        return false;
-      }
+  if(!hasAxe && !axe.picked){
+    const dx=pony.x-axe.x;
+    const dy=pony.y-axe.y;
+    if(Math.sqrt(dx*dx+dy*dy)<120){
+      actionButton="pick";
     }
-    return true;
-  });
+  }
 
-  if(!gathering)gatherStart=0;
+  if(hasAxe){
+    trees.forEach(tree=>{
+      const dx=pony.x-tree.x;
+      const dy=pony.y-tree.y;
+      if(Math.sqrt(dx*dx+dy*dy)<140){
+        actionButton="chop";
+        tree.target=true;
+      }else tree.target=false;
+    });
+  }
+
+  actionBtn.style.display=actionButton?"block":"none";
+  actionBtn.innerText=actionButton==="pick"?"Recoger":"Golpear";
 
   draw();
   requestAnimationFrame(update);
 }
 
-/* ===== DRAW ===== */
+/* DRAW */
 function draw(){
 
   ctx.setTransform(zoom,0,0,zoom,0,0);
   ctx.clearRect(0,0,canvas.width/zoom,canvas.height/zoom);
 
-  /* ===== MAPA ===== */
-  ctx.fillStyle="#3fa34d";
-  ctx.fillRect(-camera.x,-camera.y,WORLD_W,WORLD_H);
+  ctx.fillStyle="#4caf50";
+  ctx.fillRect(0-camera.x,0-camera.y,WORLD_W,WORLD_H);
 
-  /* ===== ÁRBOLES ===== */
+  /* ÁRBOLES */
   trees.forEach(tree=>{
     const tx=tree.x-camera.x;
     const ty=tree.y-camera.y;
 
-    ctx.fillStyle="#6b3f1d";
-    ctx.fillRect(tx+30,ty+60,40,40);
+    ctx.fillStyle="#5a3a1a";
+    ctx.fillRect(tx+20,ty+60,20,40);
 
-    ctx.fillStyle="#2e7d32";
+    ctx.fillStyle=tree.target?"#2e7d32":"#388e3c";
     ctx.beginPath();
-    ctx.arc(tx+50,ty+50,50,0,Math.PI*2);
+    ctx.arc(tx+30,ty+50,40,0,Math.PI*2);
     ctx.fill();
   });
 
-  /* ===== NPCs ===== */
+  /* HACHA */
+  if(!axe.picked){
+    const ax=axe.x-camera.x;
+    const ay=axe.y-camera.y;
+    ctx.fillStyle="#8b5a2b";
+    ctx.fillRect(ax,ay+20,8,30);
+    ctx.fillStyle="gray";
+    ctx.beginPath();
+    ctx.moveTo(ax,ay+20);
+    ctx.lineTo(ax+20,ay+10);
+    ctx.lineTo(ax+8,ay+30);
+    ctx.fill();
+  }
+
+  /* NPC */
   npcs.forEach(npc=>{
     const nx=npc.x-camera.x;
     const ny=npc.y-camera.y;
-    const img=npc.moving?walkFrames[npc.frame]:idleFrames[0];
-
-    ctx.save();
-    if(npc.facing==="left"){
-      ctx.translate(nx+SIZE,ny);
-      ctx.scale(-1,1);
-      ctx.drawImage(img,0,0,SIZE,SIZE);
-    }else{
-      ctx.drawImage(img,nx,ny,SIZE,SIZE);
-    }
-    ctx.restore();
+    ctx.drawImage(idleFrames[0],nx,ny,SIZE,SIZE);
   });
 
-  /* ===== JUGADOR ===== */
+  /* JUGADOR */
   const px=pony.x-camera.x;
   const py=pony.y-camera.y;
-  const img=pony.moving?walkFrames[pony.frame]:idleFrames[0];
+  let img=pony.moving?walkFrames[pony.frame]:idleFrames[0];
 
   ctx.save();
   if(pony.facing==="left"){
@@ -357,13 +372,8 @@ function draw(){
   ctx.restore();
 
   ctx.setTransform(1,0,0,1,0,0);
-
-  /* ===== UI ===== */
-  ctx.fillStyle="white";
-  ctx.font="20px Arial";
-  ctx.fillText("Madera: "+wood,20,30);
 }
-
 </script>
+
 </body>
 </html>
