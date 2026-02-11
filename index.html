@@ -6,47 +6,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 <style>
-html, body{
-  margin:0;
-  padding:0;
-  background:#222;
-  overflow:hidden;
-  touch-action:none;
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #222;
+  overflow: hidden;
+  touch-action: none;
 }
-canvas{display:block;}
 
-.controls{
-  position:fixed;
-  bottom:16px;
-  left:0;
-  right:0;
-  text-align:center;
-  z-index:10;
+canvas {
+  display: block;
 }
-.controls button{
-  width:64px;
-  height:64px;
-  font-size:26px;
-  margin:4px;
-  border-radius:10px;
-  border:none;
-  background:#8a5ccf;
-  color:white;
+
+/* ===== JOYSTICK ===== */
+#joystick {
+  position: fixed;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  display: none;
+  z-index: 20;
+}
+
+#stick {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  left: 30px;
+  top: 30px;
 }
 </style>
 </head>
+
 <body>
 
 <canvas id="game"></canvas>
 
-<div class="controls">
-  <button ontouchstart="press('up')" ontouchend="release('up')">⬆️</button><br>
-  <button ontouchstart="press('left')" ontouchend="release('left')">⬅️</button>
-  <button ontouchstart="press('right')" ontouchend="release('right')">➡️</button><br>
-  <button ontouchstart="press('down')" ontouchend="release('down')">⬇️</button>
+<div id="joystick">
+  <div id="stick"></div>
 </div>
 
 <script>
+/* ===== CANVAS ===== */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -57,74 +61,33 @@ function resize(){
 window.addEventListener("resize", resize);
 resize();
 
-/* CONFIG */
+/* ===== CONFIG ===== */
 const SIZE = 128;
 const SPEED = 4;
-const WALK_DELAY = 4;
-const WORLD_W = 3000;
-const WORLD_H = 3000;
+const WALK_DELAY = 3;
+const BLINK_INTERVAL = 5000;
+const BLINK_DELAY = 2;
 
-/* ZOOM */
-let zoom = 1;
-const MIN_ZOOM = 0.5;
-const MAX_ZOOM = 2;
+/* ===== JUGADOR ===== */
+let pony = {
+  x: 400,
+  y: 400,
+  frame: 0,
+  tick: 0,
+  moving: false,
+  facing: "right",
+  blinking: false,
+  blinkIndex: 0,
+  blinkTimer: Date.now()
+};
 
-canvas.addEventListener("wheel", e=>{
-  e.preventDefault();
-  zoom += e.deltaY * -0.001;
-  zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
-});
+/* ===== IMÁGENES ===== */
+let imagesToLoad = 0;
+let imagesLoaded = 0;
 
-let lastDist = null;
-canvas.addEventListener("touchmove", e=>{
-  if(e.touches.length===2){
-    const dx=e.touches[0].clientX-e.touches[1].clientX;
-    const dy=e.touches[0].clientY-e.touches[1].clientY;
-    const dist=Math.sqrt(dx*dx+dy*dy);
-    if(lastDist){
-      zoom += (dist-lastDist)*0.002;
-      zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
-    }
-    lastDist=dist;
-  }
-});
-canvas.addEventListener("touchend", ()=> lastDist=null);
-
-/* CONTROLES */
-const keys={up:false,down:false,left:false,right:false};
-function press(k){keys[k]=true;}
-function release(k){keys[k]=false;}
-
-/* JUGADORES */
-let players={};
-
-function createPlayer(id,name,x,y,isAI=false){
-  players[id]={
-    id,name,x,y,
-    frame:0,tick:0,
-    facing:"right",
-    moving:false,
-    isAI,
-    dirTimer:0,
-    dirX:0,
-    dirY:0,
-    prevX:x,
-    prevY:y
-  };
-}
-
-createPlayer("me","TÚ",500,500);
-createPlayer("bot1","Nova",800,600,true);
-createPlayer("bot2","Pixel",600,400,true);
-
-/* CÁMARA */
-let camera={x:0,y:0};
-
-/* IMÁGENES */
-let imagesToLoad=0, imagesLoaded=0;
 function onImageLoad(){
   imagesLoaded++;
-  if(imagesLoaded===imagesToLoad){
+  if(imagesLoaded === imagesToLoad){
     requestAnimationFrame(update);
   }
 }
@@ -147,104 +110,137 @@ for(let i=0;i<=3;i++){
   idleFrames.push(img);
 }
 
-/* UPDATE */
+/* ===== JOYSTICK ===== */
+const joystick = document.getElementById("joystick");
+const stick = document.getElementById("stick");
+
+let joyActive = false;
+let joyX = 0;
+let joyY = 0;
+let moveX = 0;
+let moveY = 0;
+
+canvas.addEventListener("touchstart", e=>{
+  const touch = e.touches[0];
+  joyActive = true;
+  joystick.style.display = "block";
+  joystick.style.left = (touch.clientX - 60) + "px";
+  joystick.style.top = (touch.clientY - 60) + "px";
+  joyX = touch.clientX;
+  joyY = touch.clientY;
+});
+
+canvas.addEventListener("touchmove", e=>{
+  if(!joyActive) return;
+  const touch = e.touches[0];
+
+  let dx = touch.clientX - joyX;
+  let dy = touch.clientY - joyY;
+
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  const max = 40;
+
+  if(dist > max){
+    dx = dx / dist * max;
+    dy = dy / dist * max;
+  }
+
+  stick.style.left = (dx + 30) + "px";
+  stick.style.top = (dy + 30) + "px";
+
+  moveX = dx / max;
+  moveY = dy / max;
+});
+
+canvas.addEventListener("touchend", ()=>{
+  joyActive = false;
+  joystick.style.display = "none";
+  stick.style.left = "30px";
+  stick.style.top = "30px";
+  moveX = 0;
+  moveY = 0;
+});
+
+/* ===== UPDATE ===== */
 function update(){
 
-  const me = players["me"];
-  me.moving=false;
+  pony.moving = false;
 
-  /* CONTROL JUGADOR */
-  if(keys.up){me.y-=SPEED;me.moving=true;}
-  if(keys.down){me.y+=SPEED;me.moving=true;}
-  if(keys.left){me.x-=SPEED;me.facing="left";me.moving=true;}
-  if(keys.right){me.x+=SPEED;me.facing="right";me.moving=true;}
+  if(moveX !== 0 || moveY !== 0){
+    pony.x += moveX * SPEED;
+    pony.y += moveY * SPEED;
+    pony.moving = true;
 
-  me.x=Math.max(0,Math.min(WORLD_W-SIZE,me.x));
-  me.y=Math.max(0,Math.min(WORLD_H-SIZE,me.y));
-
-  /* IA */
-  for(let id in players){
-    let p=players[id];
-    if(!p.isAI) continue;
-
-    p.dirTimer--;
-    if(p.dirTimer<=0){
-      p.dirTimer=Math.random()*120+60;
-      p.dirX=Math.floor(Math.random()*3)-1;
-      p.dirY=Math.floor(Math.random()*3)-1;
-    }
-
-    p.x += p.dirX*2;
-    p.y += p.dirY*2;
-
-    if(p.dirX<0)p.facing="left";
-    if(p.dirX>0)p.facing="right";
-
-    p.x=Math.max(0,Math.min(WORLD_W-SIZE,p.x));
-    p.y=Math.max(0,Math.min(WORLD_H-SIZE,p.y));
+    if(moveX > 0) pony.facing = "right";
+    if(moveX < 0) pony.facing = "left";
   }
 
-  /* ANIMACIÓN REAL */
-  for(let id in players){
-    let p=players[id];
+  // caminar
+  if(pony.moving){
+    pony.tick++;
+    if(pony.tick >= WALK_DELAY){
+      pony.frame = (pony.frame + 1) % walkFrames.length;
+      pony.tick = 0;
+    }
+    pony.blinking = false;
+    pony.blinkIndex = 0;
+    pony.blinkTimer = Date.now();
+  }
+  // idle + blink
+  else{
+    if(!pony.blinking && Date.now() - pony.blinkTimer > BLINK_INTERVAL){
+      pony.blinking = true;
+      pony.blinkIndex = 0;
+      pony.tick = 0;
+    }
 
-    const moved = (p.x!==p.prevX || p.y!==p.prevY);
-    p.moving = moved;
-
-    if(moved){
-      p.tick++;
-      if(p.tick>=WALK_DELAY){
-        p.frame=(p.frame+1)%walkFrames.length;
-        p.tick=0;
+    if(pony.blinking){
+      pony.tick++;
+      if(pony.tick >= BLINK_DELAY){
+        pony.tick = 0;
+        pony.blinkIndex++;
+        if(pony.blinkIndex >= 6){
+          pony.blinking = false;
+          pony.blinkIndex = 0;
+          pony.blinkTimer = Date.now();
+        }
       }
-    }else{
-      p.frame=0; // vuelve a idle correctamente
     }
 
-    p.prevX=p.x;
-    p.prevY=p.y;
+    pony.frame = 0;
   }
-
-  /* CÁMARA */
-  camera.x = me.x - canvas.width/(2*zoom) + SIZE/2;
-  camera.y = me.y - canvas.height/(2*zoom) + SIZE/2;
 
   draw();
   requestAnimationFrame(update);
 }
 
-/* DRAW */
+/* ===== DRAW ===== */
 function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  ctx.setTransform(zoom,0,0,zoom,0,0);
-  ctx.clearRect(0,0,canvas.width/zoom,canvas.height/zoom);
-
-  for(let id in players){
-    let p=players[id];
-
-    const px = p.x - camera.x;
-    const py = p.y - camera.y;
-
-    let img = p.moving ? walkFrames[p.frame] : idleFrames[0];
-
-    ctx.save();
-    if(p.facing==="left"){
-      ctx.translate(px+SIZE,py);
-      ctx.scale(-1,1);
-      ctx.drawImage(img,0,0,SIZE,SIZE);
-    }else{
-      ctx.drawImage(img,px,py,SIZE,SIZE);
-    }
-    ctx.restore();
-
-    ctx.fillStyle="white";
-    ctx.font="18px Arial";
-    ctx.textAlign="center";
-    ctx.fillText(p.name, px+SIZE/2, py-10);
+  let img;
+  if(pony.moving){
+    img = walkFrames[pony.frame];
+  }else if(pony.blinking){
+    const seq=[0,1,2,3,2,1];
+    img = idleFrames[seq[pony.blinkIndex]];
+  }else{
+    img = idleFrames[0];
   }
 
-  ctx.setTransform(1,0,0,1,0,0);
+  ctx.save();
+
+  if(pony.facing === "left"){
+    ctx.translate(pony.x + SIZE, pony.y);
+    ctx.scale(-1,1);
+    ctx.drawImage(img,0,0,SIZE,SIZE);
+  }else{
+    ctx.drawImage(img, pony.x, pony.y, SIZE, SIZE);
+  }
+
+  ctx.restore();
 }
 </script>
+
 </body>
 </html>
