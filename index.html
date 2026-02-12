@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 <style>
-html, body {
+html, body{
   margin:0;
   padding:0;
   background:#222;
@@ -111,19 +111,15 @@ canvas.addEventListener("touchmove",e=>{
 });
 canvas.addEventListener("touchend",()=>lastDist=null);
 
-/* CÁMARA */
+/* CAMERA */
 let camera={x:0,y:0};
 
-/* INVENTARIO */
-let inventory={
-  wood:0,
-  axe:false
-};
-
+/* INVENTORY */
+let inventory={ wood:0, axe:false };
 const woodUI=document.getElementById("woodCount");
 const axeUI=document.getElementById("axeState");
 
-/* JUGADOR */
+/* PLAYER */
 let pony={
   x:WORLD_W/2,
   y:WORLD_H/2,
@@ -150,16 +146,16 @@ let npcs=[
   createNPC(pony.x-250,pony.y+100)
 ];
 
-/* HACHA EN SUELO */
+/* AXE WORLD */
 let axeWorld={
   x:pony.x+150,
   y:pony.y+80,
   picked:false
 };
 
-/* ÁRBOLES */
+/* TREES */
 let trees=[];
-for(let i=0;i<20;i++){
+for(let i=0;i<25;i++){
   trees.push({
     x:Math.random()*WORLD_W,
     y:Math.random()*WORLD_H,
@@ -167,7 +163,7 @@ for(let i=0;i<20;i++){
   });
 }
 
-/* BOTÓN */
+/* BUTTON */
 let actionType=null;
 const actionBtn=document.getElementById("actionBtn");
 
@@ -191,7 +187,7 @@ actionBtn.onclick=()=>{
   }
 };
 
-/* IMÁGENES */
+/* IMAGES */
 let imagesToLoad=0,imagesLoaded=0;
 function onLoad(){
   imagesLoaded++;
@@ -312,7 +308,7 @@ function update(){
     }else n.frame=0;
   });
 
-  /* PROXIMIDAD */
+  /* PROXIMITY */
   actionType=null;
 
   if(!inventory.axe && !axeWorld.picked){
@@ -345,7 +341,7 @@ function draw(){
   ctx.fillStyle="#4caf50";
   ctx.fillRect(0-camera.x,0-camera.y,WORLD_W,WORLD_H);
 
-  /* ÁRBOLES */
+  /* TREES */
   trees.forEach(t=>{
     const tx=t.x-camera.x;
     const ty=t.y-camera.y;
@@ -357,18 +353,25 @@ function draw(){
     ctx.fill();
   });
 
-  /* HACHA SUELO */
+  /* AXE ON GROUND */
   if(!axeWorld.picked){
     const ax=axeWorld.x-camera.x;
     const ay=axeWorld.y-camera.y;
+
+    ctx.save();
+    ctx.translate(ax,ay);
+    ctx.rotate(-0.7);
+
     ctx.fillStyle="#8b5a2b";
-    ctx.fillRect(ax,ay+20,8,30);
-    ctx.fillStyle="gray";
-    ctx.beginPath();
-    ctx.moveTo(ax,ay+20);
-    ctx.lineTo(ax+20,ay+10);
-    ctx.lineTo(ax+8,ay+30);
-    ctx.fill();
+    ctx.fillRect(-4,0,8,30);
+
+    ctx.fillStyle="#c62828";
+    ctx.fillRect(-16,-12,32,18);
+
+    ctx.fillStyle="#ff5252";
+    ctx.fillRect(-12,-10,18,8);
+
+    ctx.restore();
   }
 
   /* NPC */
@@ -385,7 +388,7 @@ function draw(){
     ctx.restore();
   });
 
-  /* JUGADOR */
+  /* PLAYER */
   const px=pony.x-camera.x;
   const py=pony.y-camera.y;
   let img=pony.moving?walkFrames[pony.frame]:idleFrames[0];
@@ -397,49 +400,32 @@ function draw(){
   }else ctx.drawImage(img,px,py,SIZE,SIZE);
   ctx.restore();
 
-/* ===== HACHA SIMPLE MEJORADA ===== */
-if(inventory.axe){
+  /* AXE IN MOUTH */
+  if(inventory.axe){
+    const mouthX = pony.x - camera.x + (pony.facing==="right"?82:46);
+    const mouthY = pony.y - camera.y + 52;
 
-  // Posición ajustada de la boca
-  const mouthX = pony.x - camera.x + (pony.facing === "right" ? 84 : 44);
-  const mouthY = pony.y - camera.y + 58;
+    ctx.save();
+    ctx.translate(mouthX,mouthY);
+    if(pony.facing==="right"){
+      ctx.rotate(-0.6);
+    }else{
+      ctx.scale(-1,1);
+      ctx.rotate(-0.6);
+    }
 
-  ctx.save();
-  ctx.translate(mouthX, mouthY);
+    ctx.fillStyle="#8b5a2b";
+    ctx.fillRect(-4,0,8,30);
 
-  if(pony.facing === "left"){
-    ctx.scale(-1,1);
+    ctx.fillStyle="#c62828";
+    ctx.fillRect(-16,-12,32,18);
+
+    ctx.fillStyle="#ff5252";
+    ctx.fillRect(-12,-10,18,8);
+
+    ctx.restore();
   }
 
-  // Inclinación natural
-  ctx.rotate(-0.5);
-
-  /* ===== MANGO ===== */
-  // sombra lateral
-  ctx.fillStyle = "#6d4c2e";
-  ctx.fillRect(-4, 0, 8, 28);
-
-  // luz central
-  ctx.fillStyle = "#8b5a2b";
-  ctx.fillRect(-2, 0, 4, 28);
-
-  /* ===== CABEZA ROJA ===== */
-  ctx.fillStyle = "#b71c1c";
-  ctx.fillRect(-12, -14, 24, 16);
-
-  // sombra superior
-  ctx.fillStyle = "#7f0000";
-  ctx.fillRect(-12, -14, 24, 6);
-
-  /* ===== FILO ===== */
-  ctx.fillStyle = "#cfd8dc";
-  ctx.fillRect(-12, -2, 6, 8);
-
-  ctx.fillStyle = "#90a4ae";
-  ctx.fillRect(-12, -2, 3, 8);
-
-  ctx.restore();
-}
   ctx.setTransform(1,0,0,1,0,0);
 }
 </script>
