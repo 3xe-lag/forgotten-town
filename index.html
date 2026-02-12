@@ -32,35 +32,6 @@ canvas{display:block;}
   font-size:18px;
   display:none;
   z-index:30;
-  background:#444;
-  color:white;
-  border:none;
-  border-radius:8px;
-}
-
-#actionBtn.kill{
-  background:#7a0000;
-  color:#ff4d4d;
-}
-
-/* JOYSTICK */
-#joystick{
-  position:fixed;
-  width:120px;
-  height:120px;
-  border-radius:50%;
-  background:rgba(255,255,255,0.08);
-  display:none;
-  z-index:20;
-}
-#stick{
-  position:absolute;
-  width:60px;
-  height:60px;
-  border-radius:50%;
-  background:rgba(255,255,255,0.3);
-  left:30px;
-  top:30px;
 }
 </style>
 </head>
@@ -73,7 +44,6 @@ Inventario:<br>
 </div>
 
 <canvas id="game"></canvas>
-<div id="joystick"><div id="stick"></div></div>
 <button id="actionBtn">Acción</button>
 
 <script>
@@ -92,7 +62,6 @@ resize();
 /* ===== CONFIG ===== */
 const SIZE=128;
 const SPEED=4;
-const WALK_DELAY=4;
 const WORLD_W=3000;
 const WORLD_H=3000;
 
@@ -107,6 +76,21 @@ canvas.addEventListener("wheel",e=>{
   zoom=Math.max(MIN_ZOOM,Math.min(MAX_ZOOM,zoom));
 });
 
+let lastDist=null;
+canvas.addEventListener("touchmove",e=>{
+  if(e.touches.length===2){
+    const dx=e.touches[0].clientX-e.touches[1].clientX;
+    const dy=e.touches[0].clientY-e.touches[1].clientY;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(lastDist){
+      zoom+=(dist-lastDist)*0.002;
+      zoom=Math.max(MIN_ZOOM,Math.min(MAX_ZOOM,zoom));
+    }
+    lastDist=dist;
+  }
+});
+canvas.addEventListener("touchend",()=>lastDist=null);
+
 /* ===== CÁMARA ===== */
 let camera={x:0,y:0};
 
@@ -119,9 +103,6 @@ const axeUI=document.getElementById("axeState");
 let pony={
   x:WORLD_W/2,
   y:WORLD_H/2,
-  frame:0,
-  tick:0,
-  moving:false,
   facing:"right"
 };
 
@@ -131,20 +112,24 @@ function createNPC(x,y){
     x,y,
     vx:0,vy:0,
     timer:0,
-    frame:0,
-    tick:0,
-    moving:false,
-    facing:"right",
-    hp:3,
-    dead:false
+    hp:3
   };
 }
 
 let npcs=[
   createNPC(pony.x+200,pony.y-150),
-  createNPC(pony.x-250,pony.y+100),
-  createNPC(pony.x+300,pony.y+200)
+  createNPC(pony.x-250,pony.y+100)
 ];
+
+/* ===== ÁRBOLES ===== */
+let trees=[];
+for(let i=0;i<15;i++){
+  trees.push({
+    x:Math.random()*WORLD_W,
+    y:Math.random()*WORLD_H,
+    hp:4
+  });
+}
 
 /* ===== HACHA EN SUELO ===== */
 let axeWorld={
@@ -153,23 +138,11 @@ let axeWorld={
   picked:false
 };
 
-/* ===== ÁRBOLES ===== */
-let trees=[];
-for(let i=0;i<20;i++){
-  trees.push({
-    x:Math.random()*WORLD_W,
-    y:Math.random()*WORLD_H,
-    hp:4
-  });
-}
-
 /* ===== BOTÓN ===== */
 let actionType=null;
-let targetNPC=null;
 const actionBtn=document.getElementById("actionBtn");
 
 actionBtn.onclick=()=>{
-
   if(actionType==="pick"){
     inventory.axe=true;
     axeWorld.picked=true;
@@ -178,7 +151,7 @@ actionBtn.onclick=()=>{
 
   if(actionType==="chop"){
     trees.forEach(t=>{
-      if(t.target){
+      if(Math.hypot(pony.x-t.x,pony.y-t.y)<140){
         t.hp--;
         if(t.hp<=0){
           inventory.wood++;
@@ -189,97 +162,57 @@ actionBtn.onclick=()=>{
     trees=trees.filter(t=>t.hp>0);
   }
 
-  if(actionType==="kill" && targetNPC){
-    targetNPC.hp--;
-    targetNPC.vx=(targetNPC.x-pony.x)*0.15;
-    targetNPC.vy=(targetNPC.y-pony.y)*0.15;
+  if(actionType==="kill"){
+    npcs.forEach(n=>{
+      const dist=Math.hypot(pony.x-n.x,pony.y-n.y);
+      if(dist<150){
+        n.hp--;
+        
+        // Empuje suave en dirección contraria
+        const dx=n.x-pony.x;
+        const dy=n.y-pony.y;
+        const len=Math.hypot(dx,dy);
+        n.vx=(dx/len)*3;
+        n.vy=(dy/len)*3;
 
-    if(targetNPC.hp<=0){
-      targetNPC.dead=true;
-    }
+        if(n.hp<=0){
+          n.x=-9999; // desaparece
+        }
+      }
+    });
   }
 };
 
-/* ===== IMÁGENES ===== */
-let imagesToLoad=0,imagesLoaded=0;
-function onLoad(){
-  imagesLoaded++;
-  if(imagesLoaded===imagesToLoad){
-    requestAnimationFrame(update);
-  }
+/* ===== MOVIMIENTO SIMPLE ===== */
+let keys={};
+window.addEventListener("keydown",e=>keys[e.key]=true);
+window.addEventListener("keyup",e=>keys[e.key]=false);
+
+/* ===== HACHA DIBUJO ===== */
+function drawAxe(x,y,rotation=0){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(rotation);
+
+  ctx.fillStyle="#8b5a2b";
+  ctx.fillRect(-3,0,6,30);
+
+  ctx.fillStyle="#c62828";
+  ctx.fillRect(-18,-18,36,18);
+
+  ctx.fillStyle="#ff5252";
+  ctx.fillRect(-10,-14,16,6);
+
+  ctx.restore();
 }
-
-const walkFrames=[];
-for(let i=0;i<=15;i++){
-  imagesToLoad++;
-  const img=new Image();
-  img.onload=onLoad;
-  img.src=`sprites/caminar/caminar_${i}.png`;
-  walkFrames.push(img);
-}
-
-const idleFrames=[];
-for(let i=0;i<=3;i++){
-  imagesToLoad++;
-  const img=new Image();
-  img.onload=onLoad;
-  img.src=`sprites/idle/idle_${i}.png`;
-  idleFrames.push(img);
-}
-
-/* ===== JOYSTICK ===== */
-const joystick=document.getElementById("joystick");
-const stick=document.getElementById("stick");
-let joyActive=false,joyX=0,joyY=0;
-let moveX=0,moveY=0;
-
-canvas.addEventListener("touchstart",e=>{
-  if(e.touches.length>1)return;
-  const t=e.touches[0];
-  joyActive=true;
-  joystick.style.display="block";
-  joystick.style.left=(t.clientX-60)+"px";
-  joystick.style.top=(t.clientY-60)+"px";
-  joyX=t.clientX; joyY=t.clientY;
-});
-
-canvas.addEventListener("touchmove",e=>{
-  if(!joyActive||e.touches.length>1)return;
-  const t=e.touches[0];
-  let dx=t.clientX-joyX;
-  let dy=t.clientY-joyY;
-  const dist=Math.sqrt(dx*dx+dy*dy);
-  const max=40;
-  if(dist>max){
-    dx=dx/dist*max;
-    dy=dy/dist*max;
-  }
-  stick.style.left=(dx+30)+"px";
-  stick.style.top=(dy+30)+"px";
-  moveX=dx/max;
-  moveY=dy/max;
-});
-
-canvas.addEventListener("touchend",()=>{
-  joyActive=false;
-  joystick.style.display="none";
-  stick.style.left="30px";
-  stick.style.top="30px";
-  moveX=0; moveY=0;
-});
 
 /* ===== UPDATE ===== */
 function update(){
 
-  pony.moving=false;
-
-  if(moveX||moveY){
-    pony.x+=moveX*SPEED;
-    pony.y+=moveY*SPEED;
-    pony.moving=true;
-    if(moveX>0)pony.facing="right";
-    if(moveX<0)pony.facing="left";
-  }
+  if(keys["ArrowRight"]){pony.x+=SPEED;pony.facing="right";}
+  if(keys["ArrowLeft"]){pony.x-=SPEED;pony.facing="left";}
+  if(keys["ArrowUp"]){pony.y-=SPEED;}
+  if(keys["ArrowDown"]){pony.y+=SPEED;}
 
   pony.x=Math.max(0,Math.min(WORLD_W-SIZE,pony.x));
   pony.y=Math.max(0,Math.min(WORLD_H-SIZE,pony.y));
@@ -287,49 +220,21 @@ function update(){
   camera.x=pony.x-(canvas.width/(2*zoom))+SIZE/2;
   camera.y=pony.y-(canvas.height/(2*zoom))+SIZE/2;
 
-  if(pony.moving){
-    pony.tick++;
-    if(pony.tick>=WALK_DELAY){
-      pony.frame=(pony.frame+1)%walkFrames.length;
-      pony.tick=0;
-    }
-  }else pony.frame=0;
-
-  /* NPC */
+  /* NPC movimiento */
   npcs.forEach(n=>{
-    if(n.dead) return;
-
     n.timer--;
     if(n.timer<=0){
-      if(Math.random()<0.4){
-        n.vx=0;n.vy=0;
-      }else{
-        const a=Math.random()*Math.PI*2;
-        n.vx=Math.cos(a)*1.5;
-        n.vy=Math.sin(a)*1.5;
-      }
-      n.timer=60+Math.random()*120;
+      const a=Math.random()*Math.PI*2;
+      n.vx=Math.cos(a)*1.5;
+      n.vy=Math.sin(a)*1.5;
+      n.timer=120;
     }
-
     n.x+=n.vx;
     n.y+=n.vy;
-
-    n.moving=Math.abs(n.vx)>0.1||Math.abs(n.vy)>0.1;
-    if(n.vx>0)n.facing="right";
-    if(n.vx<0)n.facing="left";
-
-    if(n.moving){
-      n.tick++;
-      if(n.tick>=WALK_DELAY){
-        n.frame=(n.frame+1)%walkFrames.length;
-        n.tick=0;
-      }
-    }else n.frame=0;
   });
 
   /* PROXIMIDAD */
   actionType=null;
-  targetNPC=null;
 
   if(!inventory.axe && !axeWorld.picked){
     if(Math.hypot(pony.x-axeWorld.x,pony.y-axeWorld.y)<120){
@@ -338,35 +243,24 @@ function update(){
   }
 
   if(inventory.axe){
-
     trees.forEach(t=>{
       if(Math.hypot(pony.x-t.x,pony.y-t.y)<140){
         actionType="chop";
-        t.target=true;
-      }else t.target=false;
+      }
     });
 
     npcs.forEach(n=>{
-      if(!n.dead && Math.hypot(pony.x-n.x,pony.y-n.y)<140){
+      if(Math.hypot(pony.x-n.x,pony.y-n.y)<150){
         actionType="kill";
-        targetNPC=n;
       }
     });
   }
 
-  if(actionType){
-    actionBtn.style.display="block";
-
-    if(actionType==="kill"){
-      actionBtn.classList.add("kill");
-      actionBtn.innerText="KILL...";
-    }else{
-      actionBtn.classList.remove("kill");
-      actionBtn.innerText=actionType==="pick"?"Recoger":"Golpear";
-    }
-  }else{
-    actionBtn.style.display="none";
-  }
+  actionBtn.style.display=actionType?"block":"none";
+  actionBtn.innerText=
+    actionType==="pick"?"Recoger":
+    actionType==="chop"?"Golpear":
+    actionType==="kill"?"Kill":"";
 
   draw();
   requestAnimationFrame(update);
@@ -380,7 +274,7 @@ function draw(){
   ctx.fillStyle="#4caf50";
   ctx.fillRect(0-camera.x,0-camera.y,WORLD_W,WORLD_H);
 
-  /* ÁRBOLES */
+  /* Árboles */
   trees.forEach(t=>{
     const tx=t.x-camera.x;
     const ty=t.y-camera.y;
@@ -392,53 +286,43 @@ function draw(){
     ctx.fill();
   });
 
-  /* HACHA SUELO */
+  /* Hacha suelo */
   if(!axeWorld.picked){
-    const ax=axeWorld.x-camera.x;
-    const ay=axeWorld.y-camera.y;
-    ctx.fillStyle="#c62828";
-    ctx.fillRect(ax,ay,30,20);
+    drawAxe(axeWorld.x-camera.x,axeWorld.y-camera.y+20,0);
   }
 
   /* NPC */
   npcs.forEach(n=>{
-    const nx=n.x-camera.x;
-    const ny=n.y-camera.y;
-
-    if(n.dead){
-      ctx.save();
-      ctx.translate(nx+SIZE/2,ny+SIZE/2);
-      ctx.rotate(Math.PI/2);
-      ctx.drawImage(idleFrames[0],-SIZE/2,-SIZE/2,SIZE,SIZE);
-      ctx.restore();
-      return;
-    }
-
-    let img=n.moving?walkFrames[n.frame]:idleFrames[0];
-
-    ctx.save();
-    if(n.facing==="left"){
-      ctx.translate(nx+SIZE,ny);
-      ctx.scale(-1,1);
-      ctx.drawImage(img,0,0,SIZE,SIZE);
-    }else ctx.drawImage(img,nx,ny,SIZE,SIZE);
-    ctx.restore();
+    ctx.fillStyle="red";
+    ctx.fillRect(n.x-camera.x,n.y-camera.y,60,60);
   });
 
-  /* JUGADOR */
-  const px=pony.x-camera.x;
-  const py=pony.y-camera.y;
-  let img=pony.moving?walkFrames[pony.frame]:idleFrames[0];
-  ctx.save();
-  if(pony.facing==="left"){
-    ctx.translate(px+SIZE,py);
-    ctx.scale(-1,1);
-    ctx.drawImage(img,0,0,SIZE,SIZE);
-  }else ctx.drawImage(img,px,py,SIZE,SIZE);
-  ctx.restore();
+  /* Jugador */
+  ctx.fillStyle="purple";
+  ctx.fillRect(pony.x-camera.x,pony.y-camera.y,60,60);
+
+  /* Hacha en boca */
+  if(inventory.axe){
+    const px=pony.x-camera.x;
+    const py=pony.y-camera.y;
+
+    const mouthX=pony.facing==="right"?px+70:px+20;
+    const mouthY=py+40;
+
+    ctx.save();
+    if(pony.facing==="right"){
+      drawAxe(mouthX,mouthY,1.5708);
+    }else{
+      ctx.scale(-1,1);
+      drawAxe(-mouthX,mouthY,1.5708);
+    }
+    ctx.restore();
+  }
 
   ctx.setTransform(1,0,0,1,0,0);
 }
+
+update();
 
 </script>
 </body>
