@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 <style>
-html, body{
+html,body{
   margin:0;
   padding:0;
   background:#222;
@@ -68,6 +68,8 @@ Inventario:<br>
 <button id="actionBtn">Acción</button>
 
 <script>
+
+/* ===== CANVAS ===== */
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 
@@ -78,14 +80,14 @@ function resize(){
 window.addEventListener("resize",resize);
 resize();
 
-/* CONFIG */
+/* ===== CONFIG ===== */
 const SIZE=128;
 const SPEED=4;
 const WALK_DELAY=4;
 const WORLD_W=3000;
 const WORLD_H=3000;
 
-/* ZOOM */
+/* ===== ZOOM ===== */
 let zoom=1;
 const MIN_ZOOM=0.5;
 const MAX_ZOOM=2;
@@ -111,15 +113,15 @@ canvas.addEventListener("touchmove",e=>{
 });
 canvas.addEventListener("touchend",()=>lastDist=null);
 
-/* CAMERA */
+/* ===== CÁMARA ===== */
 let camera={x:0,y:0};
 
-/* INVENTORY */
-let inventory={ wood:0, axe:false };
+/* ===== INVENTARIO ===== */
+let inventory={wood:0,axe:false};
 const woodUI=document.getElementById("woodCount");
 const axeUI=document.getElementById("axeState");
 
-/* PLAYER */
+/* ===== JUGADOR ===== */
 let pony={
   x:WORLD_W/2,
   y:WORLD_H/2,
@@ -129,7 +131,7 @@ let pony={
   facing:"right"
 };
 
-/* NPC */
+/* ===== NPC ===== */
 function createNPC(x,y){
   return{
     x,y,
@@ -146,16 +148,16 @@ let npcs=[
   createNPC(pony.x-250,pony.y+100)
 ];
 
-/* AXE WORLD */
+/* ===== HACHA EN SUELO ===== */
 let axeWorld={
   x:pony.x+150,
   y:pony.y+80,
   picked:false
 };
 
-/* TREES */
+/* ===== ÁRBOLES ===== */
 let trees=[];
-for(let i=0;i<25;i++){
+for(let i=0;i<20;i++){
   trees.push({
     x:Math.random()*WORLD_W,
     y:Math.random()*WORLD_H,
@@ -163,7 +165,7 @@ for(let i=0;i<25;i++){
   });
 }
 
-/* BUTTON */
+/* ===== BOTÓN ===== */
 let actionType=null;
 const actionBtn=document.getElementById("actionBtn");
 
@@ -187,7 +189,7 @@ actionBtn.onclick=()=>{
   }
 };
 
-/* IMAGES */
+/* ===== IMÁGENES ===== */
 let imagesToLoad=0,imagesLoaded=0;
 function onLoad(){
   imagesLoaded++;
@@ -214,7 +216,7 @@ for(let i=0;i<=3;i++){
   idleFrames.push(img);
 }
 
-/* JOYSTICK */
+/* ===== JOYSTICK ===== */
 const joystick=document.getElementById("joystick");
 const stick=document.getElementById("stick");
 let joyActive=false,joyX=0,joyY=0;
@@ -255,7 +257,25 @@ canvas.addEventListener("touchend",()=>{
   moveX=0; moveY=0;
 });
 
-/* UPDATE */
+/* ===== FUNCIÓN HACHA (MISMO TAMAÑO SIEMPRE) ===== */
+function drawAxe(x,y,rotation=0){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(rotation);
+
+  ctx.fillStyle="#8b5a2b";
+  ctx.fillRect(-3,0,6,30);
+
+  ctx.fillStyle="#c62828";
+  ctx.fillRect(-18,-18,36,18);
+
+  ctx.fillStyle="#ff5252";
+  ctx.fillRect(-10,-14,16,6);
+
+  ctx.restore();
+}
+
+/* ===== UPDATE ===== */
 function update(){
 
   pony.moving=false;
@@ -308,7 +328,7 @@ function update(){
     }else n.frame=0;
   });
 
-  /* PROXIMITY */
+  /* PROXIMIDAD */
   actionType=null;
 
   if(!inventory.axe && !axeWorld.picked){
@@ -333,7 +353,7 @@ function update(){
   requestAnimationFrame(update);
 }
 
-/* DRAW */
+/* ===== DRAW ===== */
 function draw(){
   ctx.setTransform(zoom,0,0,zoom,0,0);
   ctx.clearRect(0,0,canvas.width/zoom,canvas.height/zoom);
@@ -341,7 +361,7 @@ function draw(){
   ctx.fillStyle="#4caf50";
   ctx.fillRect(0-camera.x,0-camera.y,WORLD_W,WORLD_H);
 
-  /* TREES */
+  /* ÁRBOLES */
   trees.forEach(t=>{
     const tx=t.x-camera.x;
     const ty=t.y-camera.y;
@@ -353,41 +373,12 @@ function draw(){
     ctx.fill();
   });
 
-  /* AXE IN MOUTH */
-if(inventory.axe){
-
-  const baseX = pony.x - camera.x;
-  const baseY = pony.y - camera.y;
-
-  // Ajuste fino de posición de boca
-  const mouthOffsetX = pony.facing==="right" ? 90 : 38;
-  const mouthOffsetY = 58;
-
-  ctx.save();
-
-  ctx.translate(baseX + mouthOffsetX, baseY + mouthOffsetY);
-
-  if(pony.facing==="right"){
-    ctx.rotate(-0.35);
-  }else{
-    ctx.scale(-1,1);
-    ctx.rotate(-0.35);
+  /* HACHA SUELO */
+  if(!axeWorld.picked){
+    const ax=axeWorld.x-camera.x;
+    const ay=axeWorld.y-camera.y;
+    drawAxe(ax,ay+20,0);
   }
-
-  // mango
-  ctx.fillStyle="#8b5a2b";
-  ctx.fillRect(-3, -4, 6, 28);
-
-  // cabeza roja
-  ctx.fillStyle="#c62828";
-  ctx.fillRect(-18, -14, 30, 18);
-
-  // brillo
-  ctx.fillStyle="#ff5252";
-  ctx.fillRect(-12, -10, 16, 6);
-
-  ctx.restore();
-}
 
   /* NPC */
   npcs.forEach(n=>{
@@ -403,7 +394,7 @@ if(inventory.axe){
     ctx.restore();
   });
 
-  /* PLAYER */
+  /* JUGADOR */
   const px=pony.x-camera.x;
   const py=pony.y-camera.y;
   let img=pony.moving?walkFrames[pony.frame]:idleFrames[0];
@@ -415,34 +406,24 @@ if(inventory.axe){
   }else ctx.drawImage(img,px,py,SIZE,SIZE);
   ctx.restore();
 
-  /* AXE IN MOUTH */
+  /* HACHA EN BOCA */
   if(inventory.axe){
-    const mouthX = pony.x - camera.x + (pony.facing==="right"?82:46);
-    const mouthY = pony.y - camera.y + 52;
+    const mouthX=pony.facing==="right"?px+92:px+36;
+    const mouthY=py+62;
 
     ctx.save();
-    ctx.translate(mouthX,mouthY);
     if(pony.facing==="right"){
-      ctx.rotate(-0.6);
+      drawAxe(mouthX,mouthY,-0.3);
     }else{
       ctx.scale(-1,1);
-      ctx.rotate(-0.6);
+      drawAxe(-mouthX,mouthY,-0.3);
     }
-
-    ctx.fillStyle="#8b5a2b";
-    ctx.fillRect(-4,0,8,30);
-
-    ctx.fillStyle="#c62828";
-    ctx.fillRect(-16,-12,32,18);
-
-    ctx.fillStyle="#ff5252";
-    ctx.fillRect(-12,-10,18,8);
-
     ctx.restore();
   }
 
   ctx.setTransform(1,0,0,1,0,0);
 }
+
 </script>
 </body>
 </html>
