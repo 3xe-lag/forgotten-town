@@ -353,26 +353,41 @@ function draw(){
     ctx.fill();
   });
 
-  /* AXE ON GROUND */
-  if(!axeWorld.picked){
-    const ax=axeWorld.x-camera.x;
-    const ay=axeWorld.y-camera.y;
+  /* AXE IN MOUTH */
+if(inventory.axe){
 
-    ctx.save();
-    ctx.translate(ax,ay);
-    ctx.rotate(-0.7);
+  const baseX = pony.x - camera.x;
+  const baseY = pony.y - camera.y;
 
-    ctx.fillStyle="#8b5a2b";
-    ctx.fillRect(-4,0,8,30);
+  // Ajuste fino de posición de boca
+  const mouthOffsetX = pony.facing==="right" ? 90 : 38;
+  const mouthOffsetY = 58;
 
-    ctx.fillStyle="#c62828";
-    ctx.fillRect(-16,-12,32,18);
+  ctx.save();
 
-    ctx.fillStyle="#ff5252";
-    ctx.fillRect(-12,-10,18,8);
+  ctx.translate(baseX + mouthOffsetX, baseY + mouthOffsetY);
 
-    ctx.restore();
+  if(pony.facing==="right"){
+    ctx.rotate(-0.35);
+  }else{
+    ctx.scale(-1,1);
+    ctx.rotate(-0.35);
   }
+
+  // mango
+  ctx.fillStyle="#8b5a2b";
+  ctx.fillRect(-3, -4, 6, 28);
+
+  // cabeza roja
+  ctx.fillStyle="#c62828";
+  ctx.fillRect(-18, -14, 30, 18);
+
+  // brillo
+  ctx.fillStyle="#ff5252";
+  ctx.fillRect(-12, -10, 16, 6);
+
+  ctx.restore();
+}
 
   /* NPC */
   npcs.forEach(n=>{
