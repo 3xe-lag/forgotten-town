@@ -160,9 +160,9 @@ actionBtn.onclick=()=>{
 let imagesToLoad=0,imagesLoaded=0;
 function onLoad(){
   imagesLoaded++;
-  if(imagesLoaded===imagesToLoad){
-    requestAnimationFrame(update);
-  }
+  setTimeout(()=>{
+  requestAnimationFrame(update);
+}, 500);
 }
 
 const walkFrames=[];
